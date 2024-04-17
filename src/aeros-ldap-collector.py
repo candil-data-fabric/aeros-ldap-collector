@@ -96,7 +96,7 @@ def output_to_kafka(kafka_server: str, kafka_topic: str, ldap_json: str) -> None
 
 ## -- BEGIN MAIN CODE -- ##
 
-if len(sys.argv) < 2:
+if len(sys.argv) != 2:
     print("ERROR: Incorrect number of arguments")
     print("Usage: python3 aeros-ldap-collector.py <path_to_config_file>")
     print("Example: python3 aeros-ldap-collector.py /aeros-ldap-collector/files/config.ini")
@@ -107,7 +107,7 @@ else:
 config = configparser.ConfigParser()
 config.read(config_file_path)
 
-organization_dn = config["DEFAULT"]["organization_dn"]
+organization_dn = config["ldap.general"]["organization_dn"]
 
 server_host = config["ldap.server"]["host"]
 server_port = config["ldap.server"]["port"]
