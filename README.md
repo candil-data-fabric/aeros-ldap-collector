@@ -1,2 +1,2 @@
-# aeros-ldap-collector
+# aerOS LDAP collector
 LDAP collector based on the ldap3 Python library for aerOS
