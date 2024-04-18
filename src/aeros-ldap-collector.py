@@ -1,20 +1,88 @@
 ## -- BEGIN IMPORT STATEMENTS -- ##
 
+import argparse
 import configparser
 import json
 from kafka import KafkaProducer
 from ldap3 import Server, Connection, ALL, ALL_ATTRIBUTES
+import logging
 import os
-import sys
 
 ## -- END IMPORT STATEMENTS -- ##
 
+## -- BEGIN CONSTANTS DECLARATION -- ##
+
+VERSION = "0.0.1"
+
+## -- END CONSTANTS DECLARATION -- ##
+
 ## -- BEGIN DEFINITION OF AUXILIARY FUNCTIONS -- ##
 
-def generate_json(users: str | bytes | bytearray,
-                  roles: str | bytes | bytearray,
-                  groups: str | bytes | bytearray,
-                  orgs: str | bytes | bytearray) -> str:
+def parse_arguments():
+    """
+    Parses invocation arguments.
+    """
+
+    parser = argparse.ArgumentParser(
+        description="LDAP collector based on the ldap3 Python library for the aerOS Project",
+        prog="python3 aeros-ldap-collector.py",
+        argument_default=argparse.SUPPRESS
+    )
+
+    parser.add_argument("-c", "--config", type=str, help="Path to the configuration file.")
+    parser.add_argument("-v", "--version", action="version", version="aerOS LDAP collector - Version " + VERSION)
+
+    return parser.parse_args()
+
+def load_config():
+    """
+    Loads configuration directives from the configuration file.
+    """
+    arguments = parse_arguments()
+
+    config = configparser.ConfigParser()
+    config.read(arguments.config)
+
+    return config
+
+def configure_logging():
+    """
+    Configures the logger for this application.
+    """
+    logger = logging.getLogger(name="aerOS LDAP collector")
+    return logger
+
+def retrieve_information(connection: Connection, organization_dn: str):
+    """
+    Retrieves LDAP information for users, roles, groups and organizations, and returns it JSON objects.
+    """
+    # Retrieve users:
+    users = connection.search('ou=users,' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
+    users = connection.response_to_json(users)
+    users = json.loads(users)
+
+    # Retrieve roles:
+    roles = connection.search('ou=roles,' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
+    roles = connection.response_to_json(roles)
+    roles = json.loads(roles)
+
+    # Retrieve groups:
+    groups = connection.search('ou=groups,' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
+    groups = connection.response_to_json(groups)
+    groups = json.loads(groups)
+
+    # Retrieve organizations:
+    orgs = connection.search(organization_dn, "(objectclass=organization)", attributes=ALL_ATTRIBUTES)
+    orgs = connection.response_to_json(orgs)
+    orgs = json.loads(orgs)
+
+    return users, roles, groups, orgs
+
+def generate_json(users, roles, groups, orgs) -> str:
+    """
+    Processes every individual JSON object, passed as arguments, and generates a single
+    JSON object with the LDAP information.
+    """
     ldap_json = {}
     ldap_json["users"] = []
     ldap_json["roles"] = []
@@ -81,12 +149,20 @@ def generate_json(users: str | bytes | bytearray,
     return json.dumps(ldap_json, indent=4)
 
 def output_to_file(output_filename: str, ldap_json: str) -> None:
+    """
+    Outputs the resulting JSON with the LDAP information to a file, if the corresponding
+    configuration directive is set.
+    """
     os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     with open(output_filename, "w") as file:
         file.write(ldap_json)
         file.close()
 
 def output_to_kafka(kafka_server: str, kafka_topic: str, ldap_json: str) -> None:
+    """
+    Outputs the resulting JSON with the LDAP information to a Kafka topic, if the corresponding
+    configuration directives are set.
+    """
     producer = KafkaProducer(bootstrap_servers=[kafka_server])
     producer.send(kafka_topic, value=ldap_json.encode("utf-8"))
     producer.flush()
@@ -96,49 +172,31 @@ def output_to_kafka(kafka_server: str, kafka_topic: str, ldap_json: str) -> None
 
 ## -- BEGIN MAIN CODE -- ##
 
-if len(sys.argv) != 2:
-    print("ERROR: Incorrect number of arguments")
-    print("Usage: python3 aeros-ldap-collector.py <path_to_config_file>")
-    print("Example: python3 aeros-ldap-collector.py /aeros-ldap-collector/files/config.ini")
-    sys.exit(1)
-else:
-    config_file_path = sys.argv[1]
+logger = configure_logging()
 
-config = configparser.ConfigParser()
-config.read(config_file_path)
+logger.info("Application started")
+
+logger.info("Trying to read configuration directives from the configuration file...")
+config = load_config()
+logger.info("Configuration directives read")
 
 organization_dn = config["ldap.general"]["organization_dn"]
 
-server_host = config["ldap.server"]["host"]
-server_port = config["ldap.server"]["port"]
-server_use_ssl = bool(config["ldap.server"]["use_ssl"])
-server_get_info = config["ldap.server"]["get_info"]
+server_endpoint = config["ldap.connection"]["server_endpoint"]
+use_ssl = bool(config["ldap.connection"]["use_ssl"])
 
-server = Server(host=server_host,
-                port=server_port,
-                use_ssl=server_use_ssl,
-                get_info=server_get_info)
+server = Server(host=server_endpoint,
+                use_ssl=use_ssl,
+                get_info=ALL)
 
-connection_user = config["ldap.connection"]["user"]
-connection_password = config["ldap.connection"]["password"]
+user = config["ldap.connection"]["user"]
+password = config["ldap.connection"]["password"]
 
-connection = Connection(server=server, user=connection_user, password=connection_password, auto_bind=True)
+connection = Connection(server=server, user=user, password=password, auto_bind=True)
 
-# Retrieve users:
-users = connection.search('ou=users' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
-users = connection.response_to_json(users)
+users, roles, groups, orgs = retrieve_information(connection=connection, organization_dn=organization_dn)
 
-# Retrieve roles:
-roles = connection.search('ou=roles' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
-roles = connection.response_to_json(roles)
-
-# Retrieve groups:
-groups = connection.search('ou=groups' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
-groups = connection.response_to_json(groups)
-
-# Retrieve organizations:
-orgs = connection.search(organization_dn, "(objectclass=organization)", attributes=ALL_ATTRIBUTES)
-orgs = connection.response_to_json(orgs)
+connection.unbind()
 
 ldap_json = generate_json(users=users, roles=roles, groups=groups, orgs=orgs)
 

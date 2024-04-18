@@ -11,7 +11,7 @@ ENV TZ=Europe/Madrid
 RUN apt-get update && apt-get dist-upgrade -y && apt-get autoremove -y && apt-get autoclean
 
 # Install some basic tools and dependencies.
-RUN apt-get install -y --no-install-recommends bash python3 python3-pip
+RUN apt-get install -y --no-install-recommends bash python3 python3-pip openssl
 
 # Install Python dependencies using PIP.
 RUN python3 -m pip install ldap3 kafka-python
