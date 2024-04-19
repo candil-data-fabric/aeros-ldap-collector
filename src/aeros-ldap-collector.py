@@ -1,3 +1,8 @@
+__name__ = "aerOS LDAP collector"
+__version__ = "1.0.0"
+__author__ = "David Martínez García"
+__credits__ = ["GIROS DIT-UPM", "Luis Bellido Triana", "Daniel González Sánchez", "David Martínez García"]
+
 ## -- BEGIN IMPORT STATEMENTS -- ##
 
 import argparse
@@ -7,14 +12,30 @@ from kafka import KafkaProducer
 from ldap3 import Server, Connection, ALL, ALL_ATTRIBUTES
 import logging
 import os
+import time
 
 ## -- END IMPORT STATEMENTS -- ##
 
 ## -- BEGIN CONSTANTS DECLARATION -- ##
 
-VERSION = "0.0.1"
+REQUIRED_CONFIG_SECTIONS = ["ldap.general", "ldap.connection", "output"]
+
+LDAP_GENERAL_REQUIRED_CONF_DIRECTIVES = ["organization_dn"]
+
+LDAP_CONNECTION_REQUIRED_CONF_DIRECTIVES = ["server_endpoint", "use_ssl", "user", "password", "max_retries", "timeout"]
+
+OUTPUT_VALID_CONF_DIRECTIVES = ["file", "kafka_server", "kafka_topic"]
+
+OUTPUT_REQUIRED_KAFKA_DIRECTIVES = ["kafka_server", "kafka_topic"]
 
 ## -- END CONSTANTS DECLARATION -- ##
+
+## -- BEGIN LOGGING CONFIGURATION -- ## 
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+
+## -- END LOGGING CONFIGURATION -- ## 
 
 ## -- BEGIN DEFINITION OF AUXILIARY FUNCTIONS -- ##
 
@@ -30,7 +51,7 @@ def parse_arguments():
     )
 
     parser.add_argument("-c", "--config", type=str, help="Path to the configuration file.")
-    parser.add_argument("-v", "--version", action="version", version="aerOS LDAP collector - Version " + VERSION)
+    parser.add_argument("-v", "--version", action="version", version="aerOS LDAP collector - Version " + __version__)
 
     return parser.parse_args()
 
@@ -45,36 +66,139 @@ def load_config():
 
     return config
 
-def configure_logging():
+def check_config(config: configparser.ConfigParser):
     """
-    Configures the logger for this application.
+    Checks if the configuration directives are valid, this is, the configuration file
+    is correct in its entirety.
     """
-    logger = logging.getLogger(name="aerOS LDAP collector")
-    return logger
+    logger.info("Reading and checking configuration directives...")
+
+    config_sections = config.sections()
+
+    if not config_sections:
+        logger.error("Configuration file is invalid")
+        raise RuntimeError("Configuration file is invalid")
+    else:
+        if config_sections != REQUIRED_CONFIG_SECTIONS:
+            logger.error("Missing or invalid configuration sections")
+            logger.error("Provided configuration sections: " + str(config_sections))
+            logger.error("Required configuration sections: " + str(REQUIRED_CONFIG_SECTIONS))
+            raise RuntimeError("Missing or invalid configuration sections")
+        else:
+            for config_section in config_sections:
+                if not config[config_section]:
+                    logger.error("No directives found in required configuration section: " + config_section)
+                    raise RuntimeError("No directives found in required configuration section: " + config_section)
+                else:
+                    directives = []
+                    for directive in config[config_section]:
+                        directives.append(directive)
+                    if config_section == "ldap.general":
+                        if directives != LDAP_GENERAL_REQUIRED_CONF_DIRECTIVES:
+                            logger.error("Missing or invalid required configuration directives for ldap.general section")
+                            logger.error("Provided configuration directives: " + str(directives))
+                            logger.error("Required configuration directives: " + str(LDAP_GENERAL_REQUIRED_CONF_DIRECTIVES))
+                            raise RuntimeError("Missing or invalid configuration directives for ldap.general section")
+                    if config_section == "ldap.connection":
+                        if directives != LDAP_CONNECTION_REQUIRED_CONF_DIRECTIVES:
+                            logger.error("Missing or invalid required configuration directives for ldap.connection section")
+                            logger.error("Provided configuration directives: " + str(directives))
+                            logger.error("Required configuration directives: " + str(LDAP_CONNECTION_REQUIRED_CONF_DIRECTIVES))
+                            raise RuntimeError("Missing or invalid configuration directives for ldap.connection section")
+                    if config_section == "output":
+                        kafka_directives = []
+                        for directive in directives:
+                            if directive not in OUTPUT_VALID_CONF_DIRECTIVES:
+                                logger.error("Invalid configuration directive for output section: " + directive)
+                                logger.error("Valid configuration directives: " + str(OUTPUT_VALID_CONF_DIRECTIVES))
+                                raise RuntimeError("Invalid configuration directive for output section: " + directive)
+                            if "kafka" in directive:
+                                kafka_directives.append(directive)
+                        if (len(kafka_directives) != 0) and (kafka_directives != OUTPUT_REQUIRED_KAFKA_DIRECTIVES):
+                            logger.error("Missing or invalid configuration directives for Kafka in output section")
+                            logger.error("Provided directive(s): " + str(kafka_directives))
+                            logger.error("Required directives: " + str(OUTPUT_REQUIRED_KAFKA_DIRECTIVES))
+                            raise RuntimeError("Missing or invalid configuration directives for Kafka in output section")
+    
+    logger.info("Configuration directives read and checked. Continuing...")
+
+def establish_connection(server: Server, user: str, password: str, max_retries: int, timeout: int) -> Connection:
+    """
+    Tries to establish a connection to the LDAP server.
+    This function will try to establish the connection within a maximum number of retries of specified timeout.
+    """
+    logger.info("Trying to establish a connection to the following LDAP server: " + str(server))
+
+    for retry in range(1, max_retries + 1):
+        try:
+            logger.info("Retry: " + str(retry))
+            connection = Connection(server, user, password, auto_bind=True)
+        except Exception as e:
+            logger.exception("The connection to the LDAP server could not be established: %s" % e)
+            if retry == max_retries:
+                raise RuntimeError("The connection to the LDAP server could not be established: %s" % e)
+            else:
+                logger.info("Waiting " + str(timeout) + " seconds before trying again")
+                time.sleep(timeout)
+                continue
+        if connection is not None:
+            break
+    
+    logger.info("Connection sucessfully established")
+
+    return connection
 
 def retrieve_information(connection: Connection, organization_dn: str):
     """
     Retrieves LDAP information for users, roles, groups and organizations, and returns it JSON objects.
     """
+    logger.info("Trying to retrieve LDAP information...")
+
     # Retrieve users:
-    users = connection.search('ou=users,' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
-    users = connection.response_to_json(users)
-    users = json.loads(users)
+    try:
+        logger.info("Trying to retrieve LDAP information for users...")
+        users = connection.search('ou=users,' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
+        users = connection.response_to_json(users)
+        users = json.loads(users)
+    except Exception as e:
+        logger.exception("Exception while retrieving LDAP information for users: %s" % e)
+        raise RuntimeError("Exception while retrieving LDAP information for users: %s" % e)
+    logger.info("LDAP information for users successfully retrieved")
 
     # Retrieve roles:
-    roles = connection.search('ou=roles,' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
-    roles = connection.response_to_json(roles)
-    roles = json.loads(roles)
+    try:
+        logger.info("Trying to retrieve LDAP information for roles...")
+        roles = connection.search('ou=roles,' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
+        roles = connection.response_to_json(roles)
+        roles = json.loads(roles)
+    except Exception as e:
+        logger.exception("Exception while retrieving LDAP information for roles: %s" % e)
+        raise RuntimeError("Exception while retrieving LDAP information for roles: %s" % e)
+    logger.info("LDAP information for roles successfully retrieved")
 
     # Retrieve groups:
-    groups = connection.search('ou=groups,' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
-    groups = connection.response_to_json(groups)
-    groups = json.loads(groups)
+    try:
+        logger.info("Trying to retrieve LDAP information for groups...")
+        groups = connection.search('ou=groups,' + organization_dn, "(objectclass=*)", attributes=ALL_ATTRIBUTES)
+        groups = connection.response_to_json(groups)
+        groups = json.loads(groups)
+    except Exception as e:
+        logger.exception("Exception while retrieving LDAP information for groups: %s" % e)
+        raise RuntimeError("Exception while retrieving LDAP information for groups: %s" % e)
+    logger.info("LDAP information for groups successfully retrieved")
 
     # Retrieve organizations:
-    orgs = connection.search(organization_dn, "(objectclass=organization)", attributes=ALL_ATTRIBUTES)
-    orgs = connection.response_to_json(orgs)
-    orgs = json.loads(orgs)
+    try:
+        logger.info("Trying to retrieve LDAP information for organizations...")
+        orgs = connection.search(organization_dn, "(objectclass=organization)", attributes=ALL_ATTRIBUTES)
+        orgs = connection.response_to_json(orgs)
+        orgs = json.loads(orgs)
+    except Exception as e:
+        logger.exception("Exception while retrieving LDAP information for organizations: %s" % e)
+        raise RuntimeError("Exception while retrieving LDAP information for organizations: %s" % e)
+    logger.info("LDAP information for organizations successfully retrieved")
+
+    logger.info("LDAP information retrieved")
 
     return users, roles, groups, orgs
 
@@ -83,6 +207,8 @@ def generate_json(users, roles, groups, orgs) -> str:
     Processes every individual JSON object, passed as arguments, and generates a single
     JSON object with the LDAP information.
     """
+    logger.info("Generating JSON object with LDAP information...")
+
     ldap_json = {}
     ldap_json["users"] = []
     ldap_json["roles"] = []
@@ -146,6 +272,8 @@ def generate_json(users, roles, groups, orgs) -> str:
                 org["attributes"][raw_attribute] = orgs["entries"][entry]["raw"][raw_attribute][0]                
         ldap_json["organizations"].append(org)
     
+    logger.info("JSON object generated")
+    
     return json.dumps(ldap_json, indent=4)
 
 def output_to_file(output_filename: str, ldap_json: str) -> None:
@@ -153,58 +281,81 @@ def output_to_file(output_filename: str, ldap_json: str) -> None:
     Outputs the resulting JSON with the LDAP information to a file, if the corresponding
     configuration directive is set.
     """
-    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
-    with open(output_filename, "w") as file:
-        file.write(ldap_json)
-        file.close()
+    logger.info("Trying to write output to the specified file...")
+
+    try:
+        os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+        with open(output_filename, "w") as file:
+            file.write(ldap_json)
+            file.close()
+    except Exception as e:
+        logger.exception("Error while trying to write output to the specified file: %s" % e)
+        raise RuntimeError("Error while trying to write output to the specified file: %s" % e)
+    
+    logger.info("Output successfully written to file")
 
 def output_to_kafka(kafka_server: str, kafka_topic: str, ldap_json: str) -> None:
     """
     Outputs the resulting JSON with the LDAP information to a Kafka topic, if the corresponding
     configuration directives are set.
     """
-    producer = KafkaProducer(bootstrap_servers=[kafka_server])
-    producer.send(kafka_topic, value=ldap_json.encode("utf-8"))
-    producer.flush()
-    producer.close()
+    logger.info("Trying to write output to the specified Kafka topic...")
+    
+    try:
+        producer = KafkaProducer(bootstrap_servers=[kafka_server])
+        producer.send(kafka_topic, value=ldap_json.encode("utf-8"))
+        producer.flush()
+        producer.close()
+    except Exception as e:
+        logger.exception("Error while trying to write output to the specified Kafka topic: %s" % e)
+        raise RuntimeError("Error while trying to write output to the specified Kafka topic: %s" % e)
+
+    logger.info("Output successfully written to Kafka")
 
 ## -- END DEFINITION OF AUXILIARY FUNCTIONS -- ##
 
 ## -- BEGIN MAIN CODE -- ##
 
-logger = configure_logging()
-
 logger.info("Application started")
 
-logger.info("Trying to read configuration directives from the configuration file...")
+# Load and check configuration from file.
 config = load_config()
-logger.info("Configuration directives read")
+check_config(config=config)
 
+# Retrieve values related with LDAP from configuration directives.
 organization_dn = config["ldap.general"]["organization_dn"]
 
 server_endpoint = config["ldap.connection"]["server_endpoint"]
-use_ssl = bool(config["ldap.connection"]["use_ssl"])
-
-server = Server(host=server_endpoint,
-                use_ssl=use_ssl,
-                get_info=ALL)
-
+use_ssl = config["ldap.connection"].getboolean("use_ssl")
 user = config["ldap.connection"]["user"]
 password = config["ldap.connection"]["password"]
+max_retries = config["ldap.connection"].getint("max_retries")
+timeout = config["ldap.connection"].getint("max_retries")
 
-connection = Connection(server=server, user=user, password=password, auto_bind=True)
+# Instantiate the representation of the LDAP server.
+server = Server(host=server_endpoint, use_ssl=use_ssl, get_info=ALL)
 
+# Try to establish the connection with the LDAP server.
+connection = establish_connection(server=server, user=user, password=password, max_retries=max_retries, timeout=timeout)
+
+# Retrieve LDAP information for users, roles, groups and organizations.
 users, roles, groups, orgs = retrieve_information(connection=connection, organization_dn=organization_dn)
 
+# Close the connection with the LDAP server.
 connection.unbind()
 
+# Generate the JSON object with LDAP information.
 ldap_json = generate_json(users=users, roles=roles, groups=groups, orgs=orgs)
 
+# Depending on the desired output configuration, as specified by the corresponding directives,
+# output the JSON with LDAP information to a file and/or to a Kafka topic.
 if "file" in config["output"]:
     output_to_file(output_filename=config["output"]["file"], ldap_json=ldap_json)
 if "kafka_server" in config["output"] and "kafka_topic" in config["output"]:
     output_to_kafka(kafka_server=config["output"]["kafka_server"],
                     kafka_topic=config["output"]["kafka_topic"],
                     ldap_json=ldap_json)
+
+logger.info("Application execution finished")
 
 ## -- END MAIN CODE -- ##
