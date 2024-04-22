@@ -1,4 +1,4 @@
-# Dockerfile for aerOS LDAP collector.
+# Dockerfile for aerOS LDAP Collector.
 
 # The base image is Ubuntu 22.04 LTS ("jammy").
 FROM ubuntu:jammy

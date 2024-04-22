@@ -1,4 +1,4 @@
-__name__ = "aerOS LDAP collector"
+__name__ = "aerOS LDAP Collector"
 __version__ = "1.0.1"
 __author__ = "David Martínez García"
 __credits__ = ["GIROS DIT-UPM", "Luis Bellido Triana", "Daniel González Sánchez", "David Martínez García"]
