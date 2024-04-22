@@ -1,5 +1,5 @@
 __name__ = "aerOS LDAP collector"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "David Martínez García"
 __credits__ = ["GIROS DIT-UPM", "Luis Bellido Triana", "Daniel González Sánchez", "David Martínez García"]
 
@@ -18,15 +18,27 @@ import time
 
 ## -- BEGIN CONSTANTS DECLARATION -- ##
 
-REQUIRED_CONFIG_SECTIONS = ["ldap.general", "ldap.connection", "output"]
+### CONFIGURATION SECTIONS AND DIRECTIVES ###
 
-LDAP_GENERAL_REQUIRED_CONF_DIRECTIVES = ["organization_dn"]
+REQUIRED_CONFIG_SECTIONS = [
+    "ldap.general", "ldap.connection", "output"
+]
 
-LDAP_CONNECTION_REQUIRED_CONF_DIRECTIVES = ["server_endpoint", "use_ssl", "user", "password", "max_retries", "timeout"]
+LDAP_GENERAL_REQUIRED_CONF_DIRECTIVES = [
+    "organization_dn"
+]
 
-OUTPUT_VALID_CONF_DIRECTIVES = ["file", "kafka_server", "kafka_topic"]
+LDAP_CONNECTION_REQUIRED_CONF_DIRECTIVES = [
+    "server_endpoint", "use_ssl", "user", "password", "max_retries", "timeout"
+]
 
-OUTPUT_REQUIRED_KAFKA_DIRECTIVES = ["kafka_server", "kafka_topic"]
+OUTPUT_VALID_CONF_DIRECTIVES = [
+    "file", "kafka_server", "kafka_topic"
+]
+
+OUTPUT_REQUIRED_KAFKA_DIRECTIVES = [
+    "kafka_server", "kafka_topic"
+]
 
 ## -- END CONSTANTS DECLARATION -- ##
 
@@ -71,7 +83,7 @@ def check_config(config: configparser.ConfigParser):
     Checks if the configuration directives are valid, this is, the configuration file
     is correct in its entirety.
     """
-    logger.info("Reading and checking configuration directives...")
+    logger.info("Reading and checking configuration file...")
 
     config_sections = config.sections()
 
@@ -116,11 +128,11 @@ def check_config(config: configparser.ConfigParser):
                                 kafka_directives.append(directive)
                         if (len(kafka_directives) != 0) and (kafka_directives != OUTPUT_REQUIRED_KAFKA_DIRECTIVES):
                             logger.error("Missing or invalid configuration directives for Kafka in output section")
-                            logger.error("Provided directive(s): " + str(kafka_directives))
+                            logger.error("Provided directives: " + str(kafka_directives))
                             logger.error("Required directives: " + str(OUTPUT_REQUIRED_KAFKA_DIRECTIVES))
                             raise RuntimeError("Missing or invalid configuration directives for Kafka in output section")
-    
-    logger.info("Configuration directives read and checked. Continuing...")
+
+    logger.info("Configuration file read and checked. Continuing...")
 
 def establish_connection(server: Server, user: str, password: str, max_retries: int, timeout: int) -> Connection:
     """
@@ -142,10 +154,9 @@ def establish_connection(server: Server, user: str, password: str, max_retries: 
                 time.sleep(timeout)
                 continue
         if connection is not None:
+            logger.info("Connection sucessfully established")
             break
     
-    logger.info("Connection sucessfully established")
-
     return connection
 
 def retrieve_information(connection: Connection, organization_dn: str):
