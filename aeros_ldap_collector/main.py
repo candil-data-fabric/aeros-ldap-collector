@@ -23,7 +23,7 @@ import time
 CONFIG_FILE_PATH = "/aeros-ldap-collector/files/config.ini"
 
 REQUIRED_CONFIG_SECTIONS = [
-    "ldap.general", "ldap.connection", "output"
+    "ldap.general", "ldap.connection"
 ]
 
 LDAP_GENERAL_REQUIRED_CONF_DIRECTIVES = [
@@ -82,7 +82,7 @@ def check_config(config: configparser.ConfigParser):
             raise RuntimeError("Missing or invalid configuration sections")
         else:
             for config_section in config_sections:
-                if not config[config_section]:
+                if config_section != "output" and not config[config_section]:
                     logger.error("No directives found in required configuration section: " + config_section)
                     raise RuntimeError("No directives found in required configuration section: " + config_section)
                 else:
@@ -197,7 +197,7 @@ def retrieve_information(connection: Connection, organization_dn: str):
 
     return users, roles, groups, orgs
 
-def generate_json(users, roles, groups, orgs, organization_dn) -> str:
+def generate_json(users, roles, groups, orgs, organization_dn) -> dict:
     """
     Processes every individual JSON object, passed as arguments, and generates a single
     JSON object with the LDAP information.
@@ -269,9 +269,9 @@ def generate_json(users, roles, groups, orgs, organization_dn) -> str:
     
     logger.info("JSON object generated")
     
-    return json.dumps(ldap_json, indent=4)
+    return ldap_json
 
-def output_to_kafka(kafka_server: str, kafka_topic: str, ldap_json: str) -> None:
+def output_to_kafka(kafka_server: str, kafka_topic: str, ldap_json: dict) -> None:
     """
     Outputs the resulting JSON with the LDAP information to a Kafka topic, if the corresponding
     configuration directives are set.
@@ -280,7 +280,7 @@ def output_to_kafka(kafka_server: str, kafka_topic: str, ldap_json: str) -> None
     
     try:
         producer = KafkaProducer(bootstrap_servers=[kafka_server])
-        producer.send(kafka_topic, value=ldap_json.encode("utf-8"))
+        producer.send(kafka_topic, value=json.dumps(ldap_json, indent=4).encode("utf-8"))
         producer.flush()
         producer.close()
     except Exception as e:
@@ -310,9 +310,9 @@ app = FastAPI(
     version=__version__
 )
 
-@app.get("/ldap")
+@app.get("/ldap.json")
 async def get_ldap_information():
-    logger.info("Received GET request to /ldap")
+    logger.info("Received GET request to /ldap.json")
 
     # Retrieve values related with LDAP from configuration directives.
     organization_dn = config["ldap.general"]["organization_dn"]
@@ -344,7 +344,9 @@ async def get_ldap_information():
                         kafka_topic=config["output"]["kafka_topic"],
                         ldap_json=ldap_json)
 
-    return json.dumps(ldap_json, indent=4)
+    logger.info("Returning JSON with LDAP data...")
+
+    return ldap_json
 
 ## -- END MAIN CODE -- ##
 
