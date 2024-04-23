@@ -14,19 +14,16 @@ RUN apt-get update && apt-get dist-upgrade -y && apt-get autoremove -y && apt-ge
 RUN apt-get install -y --no-install-recommends bash python3 python3-pip openssl
 
 # Install Python dependencies using PIP.
-RUN python3 -m pip install ldap3 kafka-python
+RUN python3 -m pip install ldap3 kafka-python fastapi uvicorn
 
 # Create application's directory and copy the script.
 RUN mkdir -p /aeros-ldap-collector
-COPY ./src/aeros-ldap-collector.py /aeros-ldap-collector
+COPY ./aeros_ldap_collector /aeros-ldap-collector/aeros_ldap_collector
 
 # Switch to application's directory as main WORKDIR.
 WORKDIR /aeros-ldap-collector
 
-# Set execution permissions to the script.
-RUN chmod +x aeros-ldap-collector.py
-
 # Finally, the ENTRYPOINT is defined.
 # The configuration file MUST be included in the invocation.
 # Its path can be included as a command or by overriding this ENTRYPOINT.
-ENTRYPOINT ["python3", "aeros-ldap-collector.py"]
+ENTRYPOINT ["uvicorn", "aeros_ldap_collector.main:app", "--host", "0.0.0.0", "--port", "63300", "--reload"]
