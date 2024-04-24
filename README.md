@@ -1,7 +1,7 @@
 # aerOS LDAP Collector
 LDAP collector based on the `ldap3` Python library for the aerOS Project.
 
-**Current version:** 1.1.1 (April 24th, 2024).
+**Current version:** 1.1.2 (April 24th, 2024).
 
 It connects to an LDAP server, retrieves information of users, roles, groups and organizations and generates a JSON object which can be used later by Morph-KGC to generate RDF triples given the appropriate mappings file. An example of this output JSON file is available [here](files/example_ldap.json).
 

@@ -1,5 +1,5 @@
 __name__ = "aerOS LDAP Collector"
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 __author__ = "David Martínez García"
 __credits__ = ["GIROS DIT-UPM", "Luis Bellido Triana", "Daniel González Sánchez", "David Martínez García"]
 
@@ -327,7 +327,9 @@ async def get_ldap_information():
     users, roles, groups, orgs = retrieve_information(connection=connection, organization_dn=organization_dn)
 
     # Close the connection with the LDAP server.
+    logger.info("Closing the connection with the LDAP server...")
     connection.unbind()
+    logger.info("Connection successfully closed")
 
     # Generate the JSON object with LDAP information.
     ldap_json = generate_json(users=users, roles=roles, groups=groups, orgs=orgs, organization_dn=organization_dn)
