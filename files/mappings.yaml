@@ -1,0 +1,67 @@
+prefixes:
+  aeros: "https://gitlab.aeros-project.eu/wp4/t4.1/aeros-continuum#/"
+  dcat: "http://www.w3.org/ns/dcat#/"
+  dct: "http://purl.org/dc/terms/"
+  foaf: "http://xmlns.com/foaf/0.1/"
+  grel: "http://users.ugent.be/~bjdmeest/function/grel.ttl#/"
+  org: "http://www.w3.org/ns/org#"
+  prov: "http://www.w3.org/ns/prov#/"
+  rdfs: "http://www.w3.org/2000/01/rdf-schema#"
+  schema: "https://schema.org/"
+
+mappings:
+  users:
+    sources:
+      - ['http://aeros-ldap-collector:63300/ldap.json~jsonpath', '$.users[*]']
+    s: aeros:$(attributes.uid)
+    po:
+      - [a, aeros:User]
+      - [foaf:givenName, $(attributes.givenName), xsd:string]
+      - [foaf:familyName, $(attributes.sn), xsd:string]
+      - [aeros:ldapIdentifier, $(dn), xsd:string]
+  
+  roles:
+    sources:
+      - ['http://aeros-ldap-collector:63300/ldap.json~jsonpath', '$.roles[*]']
+    s: org:$(attributes.cn)
+    po:
+      - [a, org:Role]
+
+  organizations:
+    sources:
+      - ['http://aeros-ldap-collector:63300/ldap.json~jsonpath', '$.organizations[*]']
+    s: org:$(attributes.dc)
+    po:
+      - [a, org:Organization]
+      - [dct:title, $(attributes.o), xsd:string]
+  
+  membership:
+    sources:
+      - ['http://aeros-ldap-collector:63300/ldap.json~jsonpath', '$.memberships[*]']
+    s: org:membership_$(memberUid)_$(role_cn)
+    po:
+      - [a, org:Membership]
+      - p: org:member
+        o:
+          - mapping: users
+            condition:
+              function: equal
+              parameters:
+                - [str1, $(memberUid), s]
+                - [str2, $(attributes.uid), o]
+      - p: org:role
+        o:
+          - mapping: roles
+            condition:
+              function: equal
+              parameters:
+                - [str1, $(role_cn), s]
+                - [str2, $(attributes.cn), o]
+      - p: org:organization
+        o:
+          - mapping: organizations
+            condition:
+              function: equal
+              parameters:
+                - [str1, $(organization_dn), s]
+                - [str2, $(dn), o]

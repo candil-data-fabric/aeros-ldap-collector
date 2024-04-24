@@ -1,5 +1,5 @@
 __name__ = "aerOS LDAP Collector"
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 __author__ = "David Martínez García"
 __credits__ = ["GIROS DIT-UPM", "Luis Bellido Triana", "Daniel González Sánchez", "David Martínez García"]
 
@@ -18,12 +18,13 @@ import time
 
 ## -- BEGIN CONSTANTS DECLARATION -- ##
 
-### CONFIGURATION SECTIONS AND DIRECTIVES ###
-
+# The configuration file is always expected to be located at this path:
 CONFIG_FILE_PATH = "/aeros-ldap-collector/files/config.ini"
 
+### CONFIGURATION SECTIONS AND DIRECTIVES ###
+
 REQUIRED_CONFIG_SECTIONS = [
-    "ldap.general", "ldap.connection"
+    "ldap.general", "ldap.connection", "output"
 ]
 
 LDAP_GENERAL_REQUIRED_CONF_DIRECTIVES = [
@@ -34,11 +35,7 @@ LDAP_CONNECTION_REQUIRED_CONF_DIRECTIVES = [
     "server_endpoint", "use_ssl", "user", "password", "max_retries", "timeout"
 ]
 
-OUTPUT_VALID_CONF_DIRECTIVES = [
-    "kafka_server", "kafka_topic"
-]
-
-OUTPUT_REQUIRED_KAFKA_DIRECTIVES = [
+OUTPUT_KAFKA_REQUIRED_DIRECTIVES = [
     "kafka_server", "kafka_topic"
 ]
 
@@ -104,16 +101,12 @@ def check_config(config: configparser.ConfigParser):
                     if config_section == "output":
                         kafka_directives = []
                         for directive in directives:
-                            if directive not in OUTPUT_VALID_CONF_DIRECTIVES:
-                                logger.error("Invalid configuration directive for output section: " + directive)
-                                logger.error("Valid configuration directives: " + str(OUTPUT_VALID_CONF_DIRECTIVES))
-                                raise RuntimeError("Invalid configuration directive for output section: " + directive)
-                            if "kafka" in directive:
+                            if "kafka_" in directive:
                                 kafka_directives.append(directive)
-                        if (len(kafka_directives) != 0) and (kafka_directives != OUTPUT_REQUIRED_KAFKA_DIRECTIVES):
+                        if (len(kafka_directives) != 0) and (kafka_directives != OUTPUT_KAFKA_REQUIRED_DIRECTIVES):
                             logger.error("Missing or invalid configuration directives for Kafka in output section")
                             logger.error("Provided directives: " + str(kafka_directives))
-                            logger.error("Required directives: " + str(OUTPUT_REQUIRED_KAFKA_DIRECTIVES))
+                            logger.error("Required directives: " + str(OUTPUT_KAFKA_REQUIRED_DIRECTIVES))
                             raise RuntimeError("Missing or invalid configuration directives for Kafka in output section")
 
     logger.info("Configuration file checked")
@@ -339,9 +332,13 @@ async def get_ldap_information():
     # Generate the JSON object with LDAP information.
     ldap_json = generate_json(users=users, roles=roles, groups=groups, orgs=orgs, organization_dn=organization_dn)
 
+    # If the directive "use_kafka" in the configuration file is set to True, the JSON object is written to
+    # a Kafka topic, given its name and the server to use.
     if "kafka_server" in config["output"] and "kafka_topic" in config["output"]:
-        output_to_kafka(kafka_server=config["output"]["kafka_server"],
-                        kafka_topic=config["output"]["kafka_topic"],
+        kafka_server = config["output"]["kafka_server"]
+        kafka_topic = config["output"]["kafka_topic"]
+        output_to_kafka(kafka_server=kafka_server,
+                        kafka_topic=kafka_topic,
                         ldap_json=ldap_json)
 
     logger.info("Returning JSON with LDAP data...")
