@@ -17,7 +17,7 @@ LDAP_Collector -> LDAP_Server: Retrieve groups
 LDAP_Server --> LDAP_Collector: OK
 LDAP_Collector -> LDAP_Server: Retrieve organizations
 LDAP_Server --> LDAP_Collector: OK
-LDAP_Collector -> LDAP_Server: Disconnect
+LDAP_Collector -> LDAP_Server: Unbind and disconnect
 LDAP_Server --> LDAP_Collector: OK
 
 note over LDAP_Collector: Generate JSON

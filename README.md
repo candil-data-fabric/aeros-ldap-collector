@@ -1,11 +1,11 @@
 # aerOS LDAP Collector
 LDAP collector based on the `ldap3` Python library for the aerOS Project.
 
-**Current version:** 1.1.2 (April 24th, 2024).
+**Current version:** 1.1.3 (April 26th, 2024).
 
-It connects to an LDAP server, retrieves information of users, roles, groups and organizations and generates a JSON object which can be used later by Morph-KGC to generate RDF triples given the appropriate mappings file. An example of this output JSON file is available [here](files/example_ldap.json).
+It connects to an LDAP server, retrieves information of users, roles, groups and organizations and generates a JSON object which can be used later by Morph-KGC to generate RDF triples given the appropriate mappings file. An example of this output JSON file is available [here](examples/ldap.json).
 
-The YARRRML mappings file can also be found [here](files/mappings.yaml). The definition of these mappings is done given the aerOS Ontology definition, which diagram is included below:
+The YARRRML mappings file can also be found [here](examples/mappings.yaml). The definition of these mappings is done given the aerOS Ontology definition, which diagram is included below:
 
 <img src="docs/aerOS-continuum-ontology.png" width="1200">
 
@@ -26,7 +26,7 @@ $ sudo docker build -t aeros-project/ldap-collector:latest .
 
 A Helm Chart for running the collector as a Kubernetes application is in the works.
 
-The collector is configured using an [`INI` file](https://en.wikipedia.org/wiki/INI_file). This file must always be placed in the following directory of the container (when run; use a volume to mount the file): `/aeros-ldap-collector/files/config.ini`. An example file is available [here](files/config.ini), although the structure of the file is the following:
+The collector is configured using an [`INI` file](https://en.wikipedia.org/wiki/INI_file). This file must always be placed in the following directory of the container (when run; use a volume to mount the file): `/aeros-ldap-collector/config.ini`. An example file is available [here](conf/config.ini), although the structure of the file is the following:
 
 ```ini
 ; Configuration file for aerOS LDAP Collector.
@@ -64,16 +64,4 @@ max_retries = <value>
 ; (MANDATORY) timeout (Integer): defines the time (in seconds) to wait between retries while trying to establish
 ; a connection with the server.
 timeout = <value>
-
-; (MANDATORY) Additional directives for outputting the JSON object that contains the LDAP information:
-[output]
-
-; (OPTIONAL) kafka_server (String): defines the socket where the Kafka server is reachable.
-; FORMAT: <ip_or_fqdn>:<port>.
-; It is MANDATORY if you wish to use Kafka as the desired output option.
-kafka_server = <value>
-
-; (OPTIONAL) kafka_topic (String): defines the topic to use for writing the resulting JSON object.
-; It is MANDATORY if you wish to use Kafka as the desired output option.
-kafka_topic = <value>
 ```
