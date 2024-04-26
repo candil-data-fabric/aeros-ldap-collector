@@ -26,7 +26,7 @@ $ sudo docker build -t aeros-project/ldap-collector:latest .
 
 A Helm Chart for running the collector as a Kubernetes application is in the works.
 
-The collector is configured using an [`INI` file](https://en.wikipedia.org/wiki/INI_file). This file must always be placed in the following directory of the container (when run; use a volume to mount the file): `/aeros-ldap-collector/config.ini`. An example file is available [here](conf/config.ini), although the structure of the file is the following:
+The collector is configured using an [`INI` file](https://en.wikipedia.org/wiki/INI_file). This file must always be placed in the following directory of the container (when run; use a volume to mount the file): `/aeros-ldap-collector/conf/config.ini`. An example file is available [here](conf/config.ini), although the structure of the file is the following:
 
 ```ini
 ; Configuration file for aerOS LDAP Collector.
