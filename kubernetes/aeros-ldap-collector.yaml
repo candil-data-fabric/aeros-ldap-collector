@@ -1,0 +1,49 @@
+# Basic Kubernetes descriptor file for aerOS LDAP Collector.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aeros-ldap-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+        app: aeros-ldap-collector
+        id: "0"
+  template:
+    metadata:
+      labels:
+        app: aeros-ldap-collector
+        id: "0"
+    spec:
+      containers:
+      - name: aeros-ldap-collector
+        image: localhost:32000/aeros-ldap-collector:latest
+        ports:
+        - containerPort: 63300
+        volumeMounts:
+        - name: config-volume
+          mountPath: /aeros-ldap-collector/conf
+        env:
+        - name: CONFIG_FILE_PATH
+          value: "/aeros-ldap-collector/conf/config.ini"
+      volumes:
+      - name: config-volume
+        configMap:
+          name: aeros-ldap-collector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aeros-ldap-collector
+  labels:
+    name: aeros-ldap-collector
+    id: "0"
+spec:
+  type: ClusterIP
+  ports:
+  - name: aeros-ldap-collector
+    port: 63300
+    protocol: TCP
+  selector:
+    app: aeros-ldap-collector
+    id: "0"
