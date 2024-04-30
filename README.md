@@ -16,7 +16,7 @@ The generation and retrieval of the JSON object is requested via a REST API meth
 ## Building the Docker image
 The collector is meant to be run as a Docker container, hence a [`Dockerfile`](Dockerfile) is provided. To build the image, simply run the following command:
 
-```(bash)
+```bash
 $ sudo docker build -t aeros-project/ldap-collector:latest .
 ```
 
@@ -26,7 +26,7 @@ If you want to deploy the collector in a local Kubernetes cluster, you need to b
 
 To enable this registry, create and/or edit the file `/etc/docker/daemon.json` with the following content:
 
-```(json)
+```json
 {
     "insecure-registries" : ["localhost:32000"]
 }
@@ -34,13 +34,13 @@ To enable this registry, create and/or edit the file `/etc/docker/daemon.json` w
 
 After that, restart the Docker daemon:
 
-```(bash)
+```bash
 $ sudo systemctl restart docker
 ```
 
 And build and push the Docker image:
 
-```(bash)
+```bash
 $ sudo docker build -t localhost:32000/aeros-ldap-collector:latest .
 $ sudo docker push localhost:32000/aeros-ldap-collector:latest
 ```
@@ -56,7 +56,7 @@ The location (file path) where this configuration file is stored must be defined
 
 An example file is available [here](conf/config.ini), although the structure of the file is the following:
 
-```(ini)
+```ini
 ; Configuration file for aerOS LDAP Collector.
 
 ; Default configuration directives:
@@ -97,7 +97,7 @@ timeout = <value>
 ### Docker Compose
 If you choose to deploy the collector using Docker Compose, you can define the service using the following directives:
 
-```(yaml)
+```yaml
 aeros-ldap-collector:
     image: aeros-project/ldap-collector:latest
     hostname: aeros-ldap-collector
@@ -118,13 +118,13 @@ This descriptor can be located [here](kubernetes/standalone/aeros-ldap-collector
 
 For deploying the collector, run the following command at the `./kubernetes/standalone` directory:
 
-```(bash)
+```bash
 $ kubectl apply -f aeros-ldap-collector.yaml
 ```
 
 For deleting the deployment, run the following command, also at the `./kubernetes/standalone` directory:
 
-```(bash)
+```bash
 $ kubectl delete -f aeros-ldap-collector.yaml
 ```
 
@@ -134,12 +134,12 @@ Should you need to change the configuration directives for the collector, simply
 
 To install the Helm Chart, run the following command at the `./kubernetes` directory:
 
-```(bash)
+```bash
 $ helm install aeros-ldap-collector ./helm
 ```
 
 To uninstall the Helm Chart, run the following command:
 
-```(bash)
+```bash
 $ helm uninstall aeros-ldap-collector
 ```
