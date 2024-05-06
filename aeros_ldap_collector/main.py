@@ -1,5 +1,5 @@
 __name__ = "aerOS LDAP Collector"
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 __author__ = "David Martínez García"
 __credits__ = ["GIROS DIT-UPM", "Luis Bellido Triana", "Daniel González Sánchez", "David Martínez García"]
 
@@ -7,24 +7,25 @@ __credits__ = ["GIROS DIT-UPM", "Luis Bellido Triana", "Daniel González Sánche
 
 import configparser
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 import json
-from kafka import KafkaProducer
 from ldap3 import Server, Connection, ALL, ALL_ATTRIBUTES
 import logging
 import time
+import os
 
 ## -- END IMPORT STATEMENTS -- ##
 
 ## -- BEGIN CONSTANTS DECLARATION -- ##
 
-# The configuration file is always expected to be located at this path:
-CONFIG_FILE_PATH = "/aeros-ldap-collector/files/config.ini"
+# The configuration file path is defined as an environment variable:
+# Default value is: /aeros-ldap-collector/conf/config.ini
+CONFIG_FILE_PATH = os.getenv("CONFIG_FILE_PATH", "/aeros-ldap-collector/conf/config.ini")
 
 ### CONFIGURATION SECTIONS AND DIRECTIVES ###
 
 REQUIRED_CONFIG_SECTIONS = [
-    "ldap.general", "ldap.connection", "output"
+    "ldap.general", "ldap.connection"
 ]
 
 LDAP_GENERAL_REQUIRED_CONF_DIRECTIVES = [
@@ -33,10 +34,6 @@ LDAP_GENERAL_REQUIRED_CONF_DIRECTIVES = [
 
 LDAP_CONNECTION_REQUIRED_CONF_DIRECTIVES = [
     "server_endpoint", "use_ssl", "user", "password", "max_retries", "timeout"
-]
-
-OUTPUT_KAFKA_REQUIRED_DIRECTIVES = [
-    "kafka_server", "kafka_topic"
 ]
 
 ### --- ###
@@ -98,16 +95,6 @@ def check_config(config: configparser.ConfigParser):
                             logger.error("Provided configuration directives: " + str(directives))
                             logger.error("Required configuration directives: " + str(LDAP_CONNECTION_REQUIRED_CONF_DIRECTIVES))
                             raise RuntimeError("Missing or invalid configuration directives for ldap.connection section")
-                    if config_section == "output":
-                        kafka_directives = []
-                        for directive in directives:
-                            if "kafka_" in directive:
-                                kafka_directives.append(directive)
-                        if (len(kafka_directives) != 0) and (kafka_directives != OUTPUT_KAFKA_REQUIRED_DIRECTIVES):
-                            logger.error("Missing or invalid configuration directives for Kafka in output section")
-                            logger.error("Provided directives: " + str(kafka_directives))
-                            logger.error("Required directives: " + str(OUTPUT_KAFKA_REQUIRED_DIRECTIVES))
-                            raise RuntimeError("Missing or invalid configuration directives for Kafka in output section")
 
     logger.info("Configuration file checked")
 
@@ -264,24 +251,6 @@ def generate_json(users, roles, groups, orgs, organization_dn) -> dict:
     
     return ldap_json
 
-def output_to_kafka(kafka_server: str, kafka_topic: str, ldap_json: dict) -> None:
-    """
-    Outputs the resulting JSON with the LDAP information to a Kafka topic, if the corresponding
-    configuration directives are set.
-    """
-    logger.info("Trying to write output to the specified Kafka topic...")
-    
-    try:
-        producer = KafkaProducer(bootstrap_servers=[kafka_server])
-        producer.send(kafka_topic, value=json.dumps(ldap_json, indent=4).encode("utf-8"))
-        producer.flush()
-        producer.close()
-    except Exception as e:
-        logger.exception("Error while trying to write output to the specified Kafka topic: %s" % e)
-        raise RuntimeError("Error while trying to write output to the specified Kafka topic: %s" % e)
-
-    logger.info("Output successfully written to Kafka")
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Application started")
@@ -303,9 +272,9 @@ app = FastAPI(
     version=__version__
 )
 
-@app.get("/ldap.json")
-async def get_ldap_information():
-    logger.info("Received GET request to /ldap.json")
+@app.get(path="/ldap.json", status_code=status.HTTP_200_OK)
+async def get_ldap(request: Request) -> dict:
+    logger.info("Received HTTP GET request from " + request.client.host + ":" + str(request.client.port) + " to /ldap.json")
 
     # Retrieve values related with LDAP from configuration directives.
     organization_dn = config["ldap.general"]["organization_dn"]
@@ -326,26 +295,16 @@ async def get_ldap_information():
     # Retrieve LDAP information for users, roles, groups and organizations.
     users, roles, groups, orgs = retrieve_information(connection=connection, organization_dn=organization_dn)
 
-    # Close the connection with the LDAP server.
-    logger.info("Closing the connection with the LDAP server...")
+    # Unbind the connection with the LDAP server.
+    logger.info("Unbinding connection with the LDAP server...")
     connection.unbind()
-    logger.info("Connection successfully closed")
+    logger.info("Connection successfully unbinded")
 
     # Generate the JSON object with LDAP information.
     ldap_json = generate_json(users=users, roles=roles, groups=groups, orgs=orgs, organization_dn=organization_dn)
-
-    # If the directive "use_kafka" in the configuration file is set to True, the JSON object is written to
-    # a Kafka topic, given its name and the server to use.
-    if "kafka_server" in config["output"] and "kafka_topic" in config["output"]:
-        kafka_server = config["output"]["kafka_server"]
-        kafka_topic = config["output"]["kafka_topic"]
-        output_to_kafka(kafka_server=kafka_server,
-                        kafka_topic=kafka_topic,
-                        ldap_json=ldap_json)
 
     logger.info("Returning JSON with LDAP data...")
 
     return ldap_json
 
 ## -- END MAIN CODE -- ##
-
