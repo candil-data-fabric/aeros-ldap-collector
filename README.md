@@ -13,6 +13,10 @@ The generation and retrieval of the JSON object is requested via a REST API meth
 
 ![](docs/sequence_diagram.png)
 
+## aerOS Data Product Pipeline for LDAP
+
+![](docs/ldap-pipeline-tests.drawio.png)
+
 ## Building the Docker image
 The collector is meant to be run as a Docker container, hence a [`Dockerfile`](Dockerfile) is provided. To build the image, simply run the following command:
 
