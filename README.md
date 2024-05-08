@@ -1,15 +1,15 @@
 # aerOS LDAP Collector
-LDAP collector based on the `ldap3` Python library for the aerOS Project.
+LDAP collector based on the [`ldap3`](https://ldap3.readthedocs.io/en/latest/) Python library for the aerOS Project.
 
 **Current version:** 1.1.3 (April 26th, 2024).
 
-It connects to an LDAP server, retrieves information of users, roles, groups and organizations and generates a JSON object which can be used later by Morph-KGC to generate RDF triples given the appropriate mappings file. An example of this output JSON file is available [here](examples/ldap.json).
+It connects to an LDAP server, retrieves information of users, roles, groups and organizations and generates a JSON object which can be used later by Morph-KGC to generate RDF triples given the appropriate mappings file. An example of this JSON output is available [here](examples/ldap.json).
 
-The YARRRML mappings file can also be found [here](examples/mappings.yaml). The definition of these mappings is done given the aerOS Ontology definition, which diagram is included below:
+The YARRRML mappings file can be found [here](examples/mappings.yaml), whereas its RML equivalent is [here](examples/mappings.ttl). The definition of these mappings is done given the aerOS Continuum Ontology definition, which diagram is included below:
 
 <img src="docs/aerOS-continuum-ontology.png" width="1200">
 
-The generation and retrieval of the JSON object is requested via a REST API method (`HTTP GET /ldap.json`) that the collector exposes. A sequence diagram that describes the general behaviour is included below:
+The generation and retrieval of the JSON object is requested via a REST API method (`HTTP GET /ldap.json`) that the collector exposes. A sequence diagram that describes the working principle of the collector is included below:
 
 ![](docs/sequence_diagram.png)
 
