@@ -1,0 +1,18 @@
+apiVersion: v2
+name: rdf2ngsild
+version: 0.1.0
+appVersion: 0.1.0
+kubeVersion: '>= 1.19-0'
+home: https://github.com/jicarretero/rdf2ngsild.git
+description: Running the rdf2ngsild tool in Kubernetes, connecting with OrionLD
+keywords:
+- fiware
+- orion-ld
+- orion
+- aerOS
+sources:
+- https://github.com/jicarretero/rdf2ngsild.git
+maintainers:
+- name: Jose Ignacio Carretero
+  email: joseignacio.carretero@fiware.org
+

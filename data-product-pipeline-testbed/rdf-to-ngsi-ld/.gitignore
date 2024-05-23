@@ -1,0 +1,8 @@
+/.history
+__pycache__
+/.venv
+*.pyc
+config.yml
+/.idea
+owl2jsonld-0.2.1-standalone.jar
+/.vscode

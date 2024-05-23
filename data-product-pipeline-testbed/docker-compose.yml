@@ -1,0 +1,131 @@
+services:
+  zookeeper:
+    image: zookeeper
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181"
+    logging:
+      driver: none
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_LOG_DIRS: "/tmp/kafka-logs"
+      KAFKA_CREATE_TOPICS: "knowledge-graphs:1:1"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper
+    logging:
+      driver: none
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--list", "--zookeeper", "zookeeper:2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  openldap:
+    image: bitnami/openldap:latest
+    container_name: openldap
+    user: root
+    environment:
+      - LDAP_PORT_NUMBER=389
+      - LDAP_ADMIN_USERNAME=admin
+      - LDAP_ADMIN_PASSWORD=aeros
+      - LDAP_ROOT=dc=example,dc=com
+      - LDAP_CUSTOM_LDIF_DIR=/ldifs
+    ports:
+      - "389:389"
+      - "636:636"
+    volumes:
+      - ./ldap-data:/ldifs
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: phpldapadmin
+    environment:
+      - PHPLDAPADMIN_LDAP_HOSTS=openldap
+    ports:
+      - "6443:443"
+    depends_on:
+      - openldap
+
+  aeros-ldap-collector:
+    image: aeros-project/ldap-collector:latest
+    hostname: aeros-ldap-collector
+    container_name: aeros-ldap-collector
+    depends_on:
+      - openldap
+    ports:
+      - "63300:63300"
+    environment:
+      - CONFIG_FILE_PATH=/aeros-ldap-collector/conf/config.ini
+    volumes:
+      - ./aeros-ldap-collector/conf:/aeros-ldap-collector/conf
+
+  morph-kgc:
+    build:
+      context: ./morph-kgc/
+      dockerfile: Dockerfile
+      args:
+        - optional_dependencies=kafka,sqlite,mysql
+    image: aeros-project/morph-kgc:latest
+    hostname: morph-kgc
+    container_name: morph-kgc
+    depends_on:
+      aeros-ldap-collector:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    command: ["/app/files/config.ini"]
+    volumes:
+      - ./morph-kgc/files:/app/files
+
+  mongo-db:
+    image: mongo:3.6
+    hostname: mongo-db
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    command: --nojournal
+    volumes:
+      - mongo-db:/data
+
+  orion-ld:
+    image: fiware/orion-ld
+    hostname: orion-ld
+    container_name: orion-ld
+    expose:
+      - "1026"
+    ports:
+      - "1026:1026"
+    depends_on:
+      - mongo-db
+    command: -dbhost mongo-db -logLevel DEBUG
+
+  rdf-to-ngsi-ld:
+    build:
+      context: ./rdf-to-ngsi-ld/
+      dockerfile: Dockerfile
+    image: aeros-project/rdf-to-ngsi-ld:latest
+    hostname: rdf-to-ngsi-ld
+    container_name: rdf-to-ngsi-ld
+    restart: always
+    volumes:
+      - ./rdf-to-ngsi-ld:/opt/aeros/rdf-to-ngsi-ld
+    depends_on:
+      kafka:
+        condition: service_healthy
+      morph-kgc:
+        condition: service_started
+
+volumes:
+  mongo-db: ~

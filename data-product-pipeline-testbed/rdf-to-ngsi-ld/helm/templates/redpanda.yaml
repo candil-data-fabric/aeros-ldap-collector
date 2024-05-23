@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.redpanda.label.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.redpanda.label.name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.redpanda.label.name }}
+    spec:
+      containers:
+        - args:
+            - redpanda
+            - start
+            - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+            - --advertise-kafka-addr internal://{{ .Values.redpanda.hostname }}:9092,external://{{ .Values.redpanda.hostname }}:19092
+            - --pandaproxy-addr internal://0.0.0.0:8082,external://{{ .Values.redpanda.hostname }}:18082
+            - --advertise-pandaproxy-addr internal://{{ .Values.redpanda.hostname }}:8082,external://{{ .Values.redpanda.hostname }}:18082
+            - --schema-registry-addr internal://0.0.0.0:8081,external://{{ .Values.redpanda.hostname }}:18081
+            - --rpc-addr {{ .Values.redpanda.hostname }}:33145
+            - --advertise-rpc-addr {{ .Values.redpanda.hostname }}:33145
+            - --smp 1
+            - --memory 1G
+            - --mode dev-container
+            - --default-log-level=info
+          image: docker.redpanda.com/redpandadata/redpanda:v23.3.5
+          name: {{ .Values.redpanda.label.name }}
+          ports:
+            - containerPort: 18081
+            #  hostPort: 18081
+            #  protocol: TCP
+            - containerPort: 18082
+            #  hostPort: 18082
+            #  protocol: TCP
+            - containerPort: 19092
+            - containerPort: 8082
+            - containerPort: 8081
+            - containerPort: 9092
+            #  hostPort: 19092
+            #  protocol: TCP
+            # - containerPort: 9644
+            #  hostPort: 19644
+            #  protocol: TCP
+          volumeMounts:
+            - mountPath: {{ .Values.redpanda.volume.mountPath }}
+              name: {{ .Values.redpanda.volume.name }}
+            - mountPath: /etc/redpanda
+              name: etcrp-volume
+      hostname: {{ .Values.redpanda.hostname }}
+      restartPolicy: Always
+      volumes:
+        - name: {{ .Values.redpanda.volume.name }}
+          {{- if .Values.redpanda.volume.isHostPath }}
+          hostPath:
+            path: {{ .Values.redpanda.volume.hostPath }}
+          {{- else if .Values.redpanda.volume.isVolumeClaim }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.redpanda.volume.claimName }}
+          {{- else }}
+          emptyDir: {}
+          {{- end}}
+        - name: etcrp-volume
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.redpanda.label.name }}
+  labels:
+    name: {{ .Values.redpanda.label.name }}
+spec:
+  type: NodePort
+  selector:
+    app: {{ .Values.redpanda.label.name }}
+  ports:
+  - port: 18081
+    targetPort: 18081
+    protocol: TCP
+    name: "18081"
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+    name: "8081"
+  - port: 18082
+    protocol: TCP
+    targetPort: 18082
+    name: "18082"
+  - port: 8082
+    protocol: TCP
+    targetPort: 8082
+    name: "8082"
+  - port: 19092
+    targetPort: 19092
+    protocol: TCP
+    name: "19092"
+  - port: 9092
+    targetPort: 9092
+    protocol: TCP
+    name: "9092"

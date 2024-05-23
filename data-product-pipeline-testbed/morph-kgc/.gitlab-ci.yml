@@ -1,0 +1,127 @@
+# Source: https://gitlab.cern.ch/ci-tools/container-image-ci-templates/-/blob/master/kaniko-image.gitlab-ci.yml
+
+# Defining the variables which can be overridden while using the template file in .gitlab-ci.yml
+# REGISTRY_USER: The username to use to connect to the remote registry
+# REGISTRY_PASSWORD: The password/token to use to connect to the remote registry
+# REGISTRY_IMAGE_PATH: Defines where the image should be pushed to.
+# CONTEXT_DIR: Defines the context dir for the image build
+# DOCKER_FILE_NAME: Defines the name of the Dockerfile
+# PUSH_IMAGE: If the gitlab step should push the built image
+# BUILD_ARGS: The build-time variables (space delimited)
+# COSIGN_PRIVATE_KEY: (optional) The base64 encoded key to use with cosign
+# EXTRA_TAGS: (optional) Extra tags to be added to the image (space delimited)
+stages:
+  - build_image
+  - push_helm
+
+variables:
+  CONTEXT_DIR: ""
+  DOCKER_FILE_NAME: "Dockerfile"
+  GIT_SUBMODULE_STRATEGY: recursive
+  PUSH_IMAGE: "true"
+  BUILD_ARGS: "kafka,sqlite,mysql"
+  SCAN_IMAGE: "false"
+  EXTRA_TAGS: "${CI_COMMIT_TAG}"
+  REGISTRY_IMAGE_PATH: "${CI_REGISTRY}/aeros-public/common-deployments/data-fabric/morph-kgc"
+  HELM_REPO_PATH: "./helm"
+  HELM_LOCAL_REPO: "aeros-common"
+  HELM_URL: "https://gitlab.aeros-project.eu/api/v4/projects/65/packages/helm/stable"
+
+build_image_morph:
+  stage: build_image
+  image:
+    # Using the official kaniko for the builds cached locally
+    name: gcr.io/kaniko-project/executor:v1.14.0-debug
+    entrypoint: [""]
+  script:
+    # Due to https://github.com/GoogleContainerTools/kaniko/pull/2040 do not use CI_REGISTRY_USER and CI_REGISTRY_PASSWORD in kaniko anymore.
+    - |
+      if [[ -z "${REGISTRY_USER}" || -z "${REGISTRY_PASSWORD}" ]]; then
+        REGISTRY_USER=${CI_REGISTRY_USER}
+        REGISTRY_PASSWORD=${CI_REGISTRY_PASSWORD}
+        unset CI_REGISTRY_USER; unset CI_REGISTRY_PASSWORD;
+      fi
+    - |
+      if [ -z "${REGISTRY_IMAGE_PATH}" ]; then
+        echo "ERROR: CI variable REGISTRY_IMAGE_PATH is mandatory."
+        exit 1
+      fi
+    - REGISTRY=$(echo ${REGISTRY_IMAGE_PATH} | cut -d / -f 1)
+    - >
+      if [ -z "${CONTEXT_DIR}" ]; then
+        KANIKO_CONTEXT_DIR=${CI_PROJECT_DIR}
+      else
+        KANIKO_CONTEXT_DIR=${CI_PROJECT_DIR}/${CONTEXT_DIR}
+      fi
+    - mkdir -p /kaniko/.docker
+    - |
+      if [ -z "$DOCKER_AUTH_CONFIG" ]; then
+        # build the DOCKER_AUTH_CONFIG from user parameters as per https://docs.gitlab.com/ee/ci/docker/using_kaniko.html and internal docs
+        if [[ "${CI_REGISTRY_USER}" || "${CI_REGISTRY_PASSWORD}" ]]; then
+          GITLAB_CONFIG=$(echo ",\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 -w0)\"}")
+        fi
+        echo "{\"auths\":{\"${REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${REGISTRY_USER}" "${REGISTRY_PASSWORD}" | base64 -w0)\"}${GITLAB_CONFIG}}}" > /kaniko/.docker/config.json
+      else
+        echo "${DOCKER_AUTH_CONFIG}" > /kaniko/.docker/config.json
+      fi
+    # build and push the image to the path set in $REGISTRY_IMAGE_PATH variable.
+    - |
+      if [ "$(echo ${PUSH_IMAGE} | tr '[:upper:]' '[:lower:]')" = "true" ]; then
+        PUSH_IMAGE=""
+      else
+        echo "Info: defer pushing image to remote as PUSH_IMAGE is false"
+        PUSH_IMAGE="--no-push"
+      fi
+    # Commented due space-separated list in optional dependencies
+    # - |
+    #   if [ -n "$BUILD_ARGS" ]; then
+    #     for arg in $BUILD_ARGS; do
+    #       KANIKO_BUILD_ARGS="${KANIKO_BUILD_ARGS} --build-arg ${arg}"
+    #     done
+    #   fi
+    - |
+      if [ -n "$EXTRA_TAGS" ]; then
+        IMAGE_WITHOUT_TAG=$(echo ${REGISTRY_IMAGE_PATH} | cut -d : -f 1)
+        for tag in $EXTRA_TAGS; do
+          KANIKO_EXTRA_TAGS="${KANIKO_EXTRA_TAGS} --destination ${IMAGE_WITHOUT_TAG}:${tag}"
+        done
+      fi
+    - /kaniko/executor
+      --context "${KANIKO_CONTEXT_DIR}"
+      --dockerfile "${KANIKO_CONTEXT_DIR}/${DOCKER_FILE_NAME}"
+      --build-arg optional_dependencies="${BUILD_ARGS}"
+      --destination "${REGISTRY_IMAGE_PATH}" ${KANIKO_EXTRA_TAGS} "${PUSH_IMAGE}"
+  rules:
+    - if: $CI_COMMIT_TAG
+
+push_helm_morph:
+  stage: push_helm
+  image: alpine:latest
+  before_script:
+    - apk update
+    - apk upgrade
+    - apk add yq
+    - apk add curl
+    - apk add jq
+    - apk add git
+    - curl -s https://api.github.com/repos/helm/helm/releases/latest -o latest_release.json
+    - jq .tag_name latest_release.json | sed 's/"//g' > latest_release.txt
+    - curl -sL https://get.helm.sh/helm-$(cat latest_release.txt)-linux-amd64.tar.gz -o helm.tar.gz
+    - tar -xzf helm.tar.gz
+    - mv linux-amd64/helm /usr/local/bin/
+    - rm -rf helm.tar.gz linux-amd64 latest_release.json latest_release.txt
+    - helm plugin install https://github.com/chartmuseum/helm-push
+  script:
+    # It is taking into account that there will be only one helm chart
+    - mkdir -p helm_copy
+    - cp -r $HELM_REPO_PATH/* helm_copy
+    - HELM_CHART_NAME=$(yq '.name' helm_copy/Chart.yaml)
+    - helm repo add --username ${CI_REGISTRY_USER} --password ${CI_REGISTRY_PASSWORD} $HELM_LOCAL_REPO $HELM_URL
+    - NEW_VERSION=$(yq '.version' helm_copy/Chart.yaml)
+    - ls helm_copy/
+    - helm package --version $NEW_VERSION helm_copy
+    - helm cm-push $HELM_CHART_NAME-$NEW_VERSION.tgz $HELM_LOCAL_REPO
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - helm/*

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  labels:
+    name: {{ .Values.mongo.label.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      name: {{ .Values.mongo.label.name }}
+  strategy:
+    type: RollingUpdate 
+  template:
+    metadata:
+      name: mongo-db
+      labels:
+        name: {{ .Values.mongo.label.name }}
+    spec:
+      {{- if .Values.mongo.volume.selectNode }}
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.mongo.volume.node }}
+      {{- end }}
+      # securityContext:
+      #  fsGroup: 51960
+      #  allowPrivilegeEscalation: false
+      containers:
+        - name: mongo-db
+          image: {{ .Values.mongo.image }}
+          args: ["--nojournal"]
+          volumeMounts:
+            - name: {{ .Values.mongo.volume.name }}
+              mountPath: {{ .Values.mongo.volume.mountPath }}
+      volumes:
+        - name: {{ .Values.mongo.volume.name }}
+          {{- if .Values.mongo.volume.isHostPath }}
+          hostPath:
+            path: {{ .Values.mongo.volume.hostPath }}
+          {{- else if .Values.mongo.volume.isVolumeClaim }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.mongo.volume.claimName }}
+          {{- else }}
+          emptyDir: {}
+          {{- end}}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  labels:
+    name: {{ .Values.mongo.label.name }}
+spec:
+  type: ClusterIP
+  selector:
+    name: {{ .Values.mongo.label.name }}
+  ports:
+    - name: mongodb
+      port: {{ .Values.mongo.dbport }}
+      protocol: TCP
