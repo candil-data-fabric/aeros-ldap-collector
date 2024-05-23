@@ -1,0 +1,77 @@
+redpanda:
+  deploy: true
+  label: 
+    name: redpanda
+  hostname: redpanda-0
+  volume:
+    name: redpanda-volume
+    isHostPath: false
+    isVolumeClaim: false
+    mountPath: /var/lib/redpanda/data
+
+    # Host path - used in case we are using Host path as volume
+    hostPath:  /tmp/redpanda-data
+
+    # persistentVolume - in case we set isVolumeClaim to True 
+    claimName: redpanda-data-pvc
+    
+    # The next are ready to be deployed
+    selectNode: false
+    node: k8s-node-04
+
+
+mongo:
+  deploy: false
+  label:
+    name: mongodb-rs
+  dbhost: mongodb
+  dbport: 27017
+  image: mongo:5.0
+  volume:
+    name: mongodb-volume
+    isHostPath: false
+    isVolumeClaim: false
+    mountPath: /data/db
+
+    # Host path - used in case we are using Host path as volume
+    hostPath:  /tmp/mongodb-data
+
+    # persistentVolume - in case we set isVolumeClaim to True 
+    claimName: mongo-data-pvc
+    
+    # The next are ready to be deployed
+    selectNode: false
+    node: k8s-node-03
+
+
+rdf2ngsild:
+  deploy: true
+  image:  dockers.fiware.org/rdf2ngsild-develop:latest
+  label:
+    name: rdf2ngsild
+  service:
+    name: rdf2ngsild
+  configmap:
+    name: rdf2ngsild
+    ldbroker: http://orion-ld-service
+    kafkaURL: redpanda:19092
+  loglevel: DEBUG
+
+
+orion:
+  deploy: false
+  experimental: true
+  port: 1026
+  exposedPort: 80
+  image: dockers.fiware.org/orionld-ubuntu2004:1.0.1
+  label:
+    name: orion-ld-rs
+  service:
+    name: orion-ld-service
+    
+    # The next one is for Vanilla K8S - Defining my own ingress.
+    hostname: orion.xip.io
+  loglevel: DEBUG
+
+ingress: false
+    # standard-csi

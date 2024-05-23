@@ -19,7 +19,7 @@ mappings:
       - [foaf:givenName, $(attributes.givenName), xsd:string]
       - [foaf:familyName, $(attributes.sn), xsd:string]
       - [aeros:ldapIdentifier, $(dn), xsd:string]
-
+  
   roles:
     sources:
       - ['http://aeros-ldap-collector:63300/ldap.json~jsonpath', '$.roles[*]']
@@ -34,7 +34,7 @@ mappings:
     po:
       - [a, org:Organization]
       - [dct:title, $(attributes.o), xsd:string]
-
+  
   membership:
     sources:
       - ['http://aeros-ldap-collector:63300/ldap.json~jsonpath', '$.memberships[*]']

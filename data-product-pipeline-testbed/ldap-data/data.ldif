@@ -1,0 +1,165 @@
+# LDIF Definition for dc=example,dc=com
+
+version: 1
+
+# Entry 1: dc=example,dc=com
+dn: dc=example,dc=com
+dc: example
+o: Example Organization
+objectclass: top
+objectclass: dcObject
+objectclass: organization
+
+# Entry 2: ou=groups,dc=example,dc=com
+dn: ou=groups,dc=example,dc=com
+objectclass: organizationalUnit
+objectclass: top
+ou: groups
+
+# Entry 3: cn=default,ou=groups,dc=example,dc=com
+dn: cn=default,ou=groups,dc=example,dc=com
+cn: default
+gidnumber: 500
+memberuid: user1
+memberuid: user2
+memberuid: user3
+memberuid: user4
+memberuid: user5
+memberuid: user6
+objectclass: posixGroup
+objectclass: top
+
+# Entry 4: ou=roles,dc=example,dc=com
+dn: ou=roles,dc=example,dc=com
+objectclass: organizationalUnit
+objectclass: top
+ou: roles
+
+# Entry 5: cn=admin,ou=roles,dc=example,dc=com
+dn: cn=admin,ou=roles,dc=example,dc=com
+cn: admin
+gidnumber: 501
+memberuid: user1
+memberuid: user2
+memberuid: user3
+objectclass: posixGroup
+objectclass: top
+
+# Entry 6: cn=developer,ou=roles,dc=example,dc=com
+dn: cn=developer,ou=roles,dc=example,dc=com
+cn: developer
+gidnumber: 502
+memberuid: user1
+memberuid: user2
+memberuid: user6
+objectclass: posixGroup
+objectclass: top
+
+# Entry 7: cn=financial,ou=roles,dc=example,dc=com
+dn: cn=financial,ou=roles,dc=example,dc=com
+cn: financial
+gidnumber: 503
+memberuid: user1
+memberuid: user2
+memberuid: user4
+objectclass: posixGroup
+objectclass: top
+
+# Entry 8: cn=support,ou=roles,dc=example,dc=com
+dn: cn=support,ou=roles,dc=example,dc=com
+cn: support
+gidnumber: 504
+memberuid: user5
+objectclass: posixGroup
+objectclass: top
+
+# Entry 9: ou=users,dc=example,dc=com
+dn: ou=users,dc=example,dc=com
+objectclass: organizationalUnit
+objectclass: top
+ou: users
+
+# Entry 10: cn=user1,ou=users,dc=example,dc=com
+dn: cn=user1,ou=users,dc=example,dc=com
+cn: user1
+gidnumber: 500
+givenname: User
+homedirectory: /home/users/user1
+objectclass: inetOrgPerson
+objectclass: posixAccount
+objectclass: top
+sn: Number 1
+uid: user1
+uidnumber: 1000
+userpassword: {MD5}ICy5YqxZB1uWSwcVLSNLcA==
+
+# Entry 11: cn=user2,ou=users,dc=example,dc=com
+dn: cn=user2,ou=users,dc=example,dc=com
+cn: user2
+gidnumber: 500
+givenname: User
+homedirectory: /home/users/user2
+objectclass: inetOrgPerson
+objectclass: posixAccount
+objectclass: top
+sn: Number 2
+uid: user2
+uidnumber: 1001
+userpassword: {MD5}ICy5YqxZB2uWSwcVLSNLcA==
+
+# Entry 12: cn=user3,ou=users,dc=example,dc=com
+dn: cn=user3,ou=users,dc=example,dc=com
+cn: user3
+gidnumber: 500
+givenname: User
+homedirectory: /home/users/user3
+objectclass: inetOrgPerson
+objectclass: posixAccount
+objectclass: top
+sn: Number 3
+uid: user3
+uidnumber: 1002
+userpassword: {MD5}ICy5YqxZB3uWSwcVLSNLcA==
+
+# Entry 13: cn=user4,ou=users,dc=example,dc=com
+dn: cn=user4,ou=users,dc=example,dc=com
+cn: user4
+gidnumber: 500
+givenname: User
+homedirectory: /home/users/user4
+objectclass: inetOrgPerson
+objectclass: posixAccount
+objectclass: top
+sn: Number 4
+uid: user4
+uidnumber: 1003
+userpassword: {MD5}ICy5YqxZB4uWSwcVLSNLcA==
+
+# Entry 14: cn=user5,ou=users,dc=example,dc=com
+dn: cn=user5,ou=users,dc=example,dc=com
+cn: user5
+gidnumber: 500
+givenname: User
+homedirectory: /home/users/user5
+objectclass: inetOrgPerson
+objectclass: posixAccount
+objectclass: top
+sn: Number 5
+uid: user5
+uidnumber: 1004
+userpassword: {MD5}ICy5YqxZB5uWSwcVLSNLcA==
+
+# Entry 15: cn=user6,ou=users,dc=example,dc=com
+dn: cn=user6,ou=users,dc=example,dc=com
+cn: user6
+gidnumber: 500
+givenname: User
+homedirectory: /home/users/user6
+objectclass: inetOrgPerson
+objectclass: posixAccount
+objectclass: top
+sn: Number 6
+uid: user6
+uidnumber: 1005
+userpassword: {MD5}ICy5YqxZB6uWSwcVLSNLcA==
+

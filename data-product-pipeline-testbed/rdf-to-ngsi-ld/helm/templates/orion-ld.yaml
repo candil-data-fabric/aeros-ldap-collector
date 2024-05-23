@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orion-ld
+  labels:
+    name: {{ .Values.orion.label.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      name: {{ .Values.orion.label.name }}
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      name: orion-ld
+      labels:
+        name: {{ .Values.orion.label.name }}
+    spec:
+      restartPolicy: Always
+      hostname: orion-ld
+      containers:
+        - name: orion-ld
+          image: {{ .Values.orion.image }}
+          args: 
+            - -dbhost
+            - {{ .Values.mongo.dbhost }}
+            - -logLevel
+            - {{ .Values.orion.loglevel }}
+            {{- if .Values.orion.experimental }}
+            - -experimental
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.orion.port }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.orion.service.name }}
+  labels:
+    name: {{ .Values.orion.label.name }}
+spec:
+  type: ClusterIP
+  selector:
+    name: {{ .Values.orion.label.name }}
+  ports:
+    - name: ngsild
+      port: {{ .Values.orion.exposedPort }}
+      targetPort: {{ .Values.orion.port }}
+      protocol: TCP

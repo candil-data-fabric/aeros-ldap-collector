@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.orion.service.name }}
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: {{ .Values.orion.service.hostname }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: orion-ld-service
+            port: 
+              number: 1026
