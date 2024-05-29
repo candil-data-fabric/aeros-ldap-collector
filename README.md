@@ -1,17 +1,24 @@
 # aerOS LDAP Collector
-LDAP collector based on the [`ldap3`](https://ldap3.readthedocs.io/en/latest/) Python library for the aerOS Project.
 
-**Current version:** 1.1.3 (April 26th, 2024).
+The LDAP collector is a Python application based on the [`ldap3`](https://ldap3.readthedocs.io/en/latest/), [FastAPI](https://fastapi.tiangolo.com/) and [Uvicorn](https://www.uvicorn.org/) libraries for the aerOS Project.
 
 It connects to an LDAP server, retrieves information of users, roles, groups and organizations and generates a JSON object which can be used later by Morph-KGC to generate RDF triples given the appropriate mappings file. An example of this JSON output is available [here](examples/ldap.json).
 
-The YARRRML mappings file can be found [here](examples/mappings.yaml), whereas its RML equivalent is [here](examples/mappings.ttl). The definition of these mappings is done given the aerOS Continuum Ontology definition, which diagram is included below:
+The YARRRML mappings file can be found [here](examples/mappings.yaml), whereas its RML equivalent is [here](examples/mappings.ttl). These mappings have been defined according to the aerOS Continuum Ontology, which diagram is included below:
 
 <img src="docs/aerOS-continuum-ontology.png" width="1200">
+
+The LDAP collector is a neccesary component for integrating LDAP data into the knowledge graph.
 
 The generation and retrieval of the JSON object is requested via a REST API method (`HTTP GET /ldap.json`) that the collector exposes. A sequence diagram that describes the working principle of the collector is included below:
 
 ![](docs/sequence_diagram.png)
+
+## Current versions:
+- **LDAP Collector application**: 1.1.3 (April 26th, 2024).
+- **Dockerfile**: 1.1.3 (May 29th, 2024).
+- **Kubernetes manifest file**: 2.0.0 (May 29th, 2024).
+- **Helm Chart**: 2.0.0 (May 29th, 2024).
 
 ## aerOS Data Product Pipeline for LDAP
 
@@ -23,6 +30,8 @@ The collector is meant to be run as a Docker container, hence a [`Dockerfile`](D
 ```bash
 $ sudo docker build -t aeros-project/ldap-collector:latest .
 ```
+
+**NOTE:** The collector will serve HTTP GET requests on port 63300 (TCP).
 
 If you want to deploy the collector in a local Kubernetes cluster, you need to build and push the image to Docker's local registry.
 
@@ -48,8 +57,6 @@ And build and push the Docker image:
 $ sudo docker build -t localhost:32000/aeros-ldap-collector:latest .
 $ sudo docker push localhost:32000/aeros-ldap-collector:latest
 ```
-
-**NOTE:** The HTTP server of the collector will run on port 63300 (TCP).
 
 ## Running the collector
 
@@ -116,25 +123,25 @@ aeros-ldap-collector:
 
 You can change the configuration directives by modifying the [configuration file](conf/config.ini).
 
-### Standalone Kubernetes
-A basic/standalone Kubernetes descriptor file is provided.
-This descriptor can be located [here](kubernetes/standalone/aeros-ldap-collector.yaml). You can edit this file and change the configuration directives for the collector as well as the file path where they will be mounted.
+### Kubernetes manifest file
 
-For deploying the collector, run the following command at the `./kubernetes/standalone` directory:
+Should you need to change the configuration directives for the collector, simply edit the [`ConfigMap` defined in the manifest file](kubernetes/aeros-ldap-collector.yaml).
+
+To deploy the collector, run the following command at the `./kubernetes` directory:
 
 ```bash
 $ kubectl apply -f aeros-ldap-collector.yaml
 ```
 
-For deleting the deployment, run the following command, also at the `./kubernetes/standalone` directory:
+To delete the deployment, run the following command, also at the `./kubernetes` directory:
 
 ```bash
 $ kubectl delete -f aeros-ldap-collector.yaml
 ```
 
 ### Helm Chart
-A Helm Chart is also provided. You can find all files and descriptors [here](kubernetes/helm/).
-Should you need to change the configuration directives for the collector, simply edit the [ConfigMap descriptor file](kubernetes/helm/templates/configmap.yaml). You can also modify the [`values.yaml`](kubernetes/helm/values.yaml) file if you need it.
+
+Should you need to change the configuration directives for the collector, simply edit the [`ConfigMap` descriptor file](helm/templates/configmap.yaml). You can also modify the [`values.yaml`](helm/values.yaml) and [`Chart.yaml`](helm/Chart.yaml) files if you need it.
 
 To install the Helm Chart, run the following command at the `./kubernetes` directory:
 
@@ -152,40 +159,4 @@ $ helm uninstall aeros-ldap-collector
 
 In the [`data-product-pipeline-testbed`](data-product-pipeline-testbed) subdirectory you can find a Docker Compose scenario that defines a testbed with a _data product pipeline_ for testing the LDAP Collector as well as the integration of LDAP data into the knowledge graph.
 
-To deploy the scenario, navigate to that subdirectory and run the following command:
-
-```bash
-$ sudo docker compose up
-```
-
-The pipeline will run once, and the LDAP data will be included into the knowledge graph. You can query the NGSI-LD Context Broker with the following commands (make sure you have the `jq` package installed in your machine so that the JSON output can be properly formatted and thus be easier to read):
-
-- __To get all `User` entities__:
-
-```bash
-$ curl -X GET "http://localhost:1026/ngsi-ld/v1/entities?type=User" -H  "accept: application/json" | jq
-```
-
-- __To get all `Role` entities__:
-
-```bash
-$ curl -X GET "http://localhost:1026/ngsi-ld/v1/entities?type=Role" -H  "accept: application/json" | jq
-```
-
-- __To get all `Organization` entities__:
-
-```bash
-$ curl -X GET "http://localhost:1026/ngsi-ld/v1/entities?type=Organization" -H  "accept: application/json" | jq
-```
-
-- __To get all `Membership` entities__:
-
-```bash
-$ curl -X GET "http://localhost:1026/ngsi-ld/v1/entities?type=Membership" -H  "accept: application/json" | jq
-```
-
-To destroy the scenario, run the following command:
-
-```bash
-$ sudo docker compose down
-```
+Go [here](data-product-pipeline-testbed/README.md) to get instructions on how to run and interact with the testbed.
