@@ -1,4 +1,4 @@
-# Basic/standalone Kubernetes descriptor file for aerOS LDAP Collector.
+# Kubernetes descriptor/manifest file for aerOS LDAP Collector.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -60,6 +60,7 @@ spec:
       containers:
       - name: aeros-ldap-collector
         image: localhost:32000/aeros-ldap-collector:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 63300
         volumeMounts:
@@ -71,7 +72,7 @@ spec:
       volumes:
       - name: config-volume
         configMap:
-          name: aeros-ldap-collector-config
+          name: aeros-ldap-collector-configmap
 ---
 apiVersion: v1
 kind: Service
