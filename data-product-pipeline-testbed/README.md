@@ -40,7 +40,7 @@ $ curl -X GET "http://localhost:1026/ngsi-ld/v1/entities?type=Membership" -H  "a
 
 If you wish to browse the LDAP database, you can open the `phpldapadmin` GUI at https://localhost:6443. To log in, enter the following credentials:
 - User/Admin DN: `cn=admin,dc=mycompany,dc=com`
-- Password: `giros`
+- Password: `candil`
 
 To destroy the scenario, run the following command:
 
