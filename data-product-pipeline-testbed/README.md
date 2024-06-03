@@ -1,4 +1,4 @@
-# aerOS Data Product Pipeline testbed for LDAP
+# Data Product Pipeline testbed for LDAP
 
 ![](docs/ldap-pipeline-tests.drawio.png)
 
@@ -6,7 +6,7 @@
 
 <img src="docs/aerOS-continuum-ontology.png" width="1200">
 
-To deploy the scenario, navigate to that subdirectory and run the following command:
+To deploy the scenario run the following command:
 
 ```bash
 $ sudo docker compose up
@@ -40,7 +40,7 @@ $ curl -X GET "http://localhost:1026/ngsi-ld/v1/entities?type=Membership" -H  "a
 
 If you wish to browse the LDAP database, you can open the `phpldapadmin` GUI at https://localhost:6443. To log in, enter the following credentials:
 - User/Admin DN: `cn=admin,dc=mycompany,dc=com`
-- Password: `aeros`
+- Password: `giros`
 
 To destroy the scenario, run the following command:
 

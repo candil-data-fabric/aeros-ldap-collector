@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "aeros-ldap-collector.name" -}}
+{{- define "ldap-collector.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "aeros-ldap-collector.fullname" -}}
+{{- define "ldap-collector.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "aeros-ldap-collector.chart" -}}
+{{- define "ldap-collector.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "aeros-ldap-collector.labels" -}}
-helm.sh/chart: {{ include "aeros-ldap-collector.chart" . }}
-{{ include "aeros-ldap-collector.selectorLabels" . }}
+{{- define "ldap-collector.labels" -}}
+helm.sh/chart: {{ include "ldap-collector.chart" . }}
+{{ include "ldap-collector.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,17 +45,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "aeros-ldap-collector.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "aeros-ldap-collector.name" . }}
+{{- define "ldap-collector.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "ldap-collector.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "aeros-ldap-collector.serviceAccountName" -}}
+{{- define "ldap-collector.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "aeros-ldap-collector.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "ldap-collector.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}

@@ -1,6 +1,6 @@
-# aerOS LDAP Collector
+# LDAP Collector
 
-The LDAP collector is a Python application based on the [`ldap3`](https://ldap3.readthedocs.io/en/latest/), [FastAPI](https://fastapi.tiangolo.com/) and [Uvicorn](https://www.uvicorn.org/) libraries for the aerOS Project.
+The LDAP collector is a Python application based on the [`ldap3`](https://ldap3.readthedocs.io/en/latest/), [FastAPI](https://fastapi.tiangolo.com/) and [Uvicorn](https://www.uvicorn.org/) libraries.
 
 It connects to an LDAP server, retrieves information of users, roles, groups and organizations and generates a JSON object which can be used later by Morph-KGC to generate RDF triples given the appropriate mappings file. An example of this JSON output is available [here](examples/ldap.json).
 
@@ -16,11 +16,11 @@ The generation and retrieval of the JSON object is requested via a REST API meth
 
 ## Current versions:
 - **LDAP Collector application**: 1.1.3 (April 26th, 2024).
-- **Dockerfile**: 1.1.3 (May 29th, 2024).
-- **Kubernetes manifest file**: 2.0.0 (May 29th, 2024).
-- **Helm Chart**: 2.0.0 (May 29th, 2024).
+- **Dockerfile**: 2.0.0 (June 3rd, 2024).
+- **Kubernetes manifest file**: 2.0.1 (June 3rd, 2024).
+- **Helm Chart**: 2.0.1 (June 3rd, 2024).
 
-## aerOS Data Product Pipeline for LDAP
+## Data Product Pipeline for LDAP
 
 ![](docs/ldap-pipeline-tests.drawio.png)
 
@@ -28,7 +28,7 @@ The generation and retrieval of the JSON object is requested via a REST API meth
 The collector is meant to be run as a Docker container, hence a [`Dockerfile`](Dockerfile) is provided. To build the image, simply run the following command:
 
 ```bash
-$ sudo docker build -t aeros-project/ldap-collector:latest .
+$ sudo docker build -t candil-data-fabric/ldap-collector:2.0.0 .
 ```
 
 **NOTE:** The collector will serve HTTP GET requests on port 63300 (TCP).
@@ -54,8 +54,8 @@ $ sudo systemctl restart docker
 And build and push the Docker image:
 
 ```bash
-$ sudo docker build -t localhost:32000/aeros-ldap-collector:latest .
-$ sudo docker push localhost:32000/aeros-ldap-collector:latest
+$ sudo docker build -t localhost:32000/ldap-collector:2.0.0 .
+$ sudo docker push localhost:32000/ldap-collector:2.0.0
 ```
 
 ## Running the collector
@@ -63,12 +63,12 @@ $ sudo docker push localhost:32000/aeros-ldap-collector:latest
 ### Configuration file
 The collector is configured using an [`INI` file](https://en.wikipedia.org/wiki/INI_file).
 
-The location (file path) where this configuration file is stored must be defined using the following environmental variable: `CONFIG_FILE_PATH`. In case this variable is not set, the application will look for the file at `/aeros-ldap-collector/conf/config.ini`.
+The location (file path) where this configuration file is stored must be defined using the following environmental variable: `CONFIG_FILE_PATH`. In case this variable is not set, the application will look for the file at `/ldap-collector/conf/config.ini`.
 
 An example file is available [here](conf/config.ini), although the structure of the file is the following:
 
 ```ini
-; Configuration file for aerOS LDAP Collector.
+; Configuration file for the LDAP Collector.
 
 ; Default configuration directives:
 [DEFAULT]
@@ -109,34 +109,34 @@ timeout = <value>
 If you choose to deploy the collector using Docker Compose, you can define the service using the following directives:
 
 ```yaml
-aeros-ldap-collector:
-    image: aeros-project/ldap-collector:latest
-    hostname: aeros-ldap-collector
-    container_name: aeros-ldap-collector
+ldap-collector:
+    image: candil-data-fabric/ldap-collector:2.0.0
+    hostname: ldap-collector
+    container_name: ldap-collector
     ports:
         - "63300:63300"
     environment:
-        - CONFIG_FILE_PATH=/aeros-ldap-collector/conf/config.ini
+        - CONFIG_FILE_PATH=/ldap-collector/conf/config.ini
     volumes:
-        - ./aeros-ldap-collector/conf:/aeros-ldap-collector/conf
+        - ./ldap-collector/conf:/ldap-collector/conf
 ```
 
 You can change the configuration directives by modifying the [configuration file](conf/config.ini).
 
 ### Kubernetes manifest file
 
-Should you need to change the configuration directives for the collector, simply edit the [`ConfigMap` defined in the manifest file](kubernetes/aeros-ldap-collector.yaml).
+Should you need to change the configuration directives for the collector, simply edit the [`ConfigMap` defined in the manifest file](kubernetes/ldap-collector.yaml).
 
 To deploy the collector, run the following command at the `./kubernetes` directory:
 
 ```bash
-$ kubectl apply -f aeros-ldap-collector.yaml
+$ kubectl apply -f ldap-collector.yaml
 ```
 
 To delete the deployment, run the following command, also at the `./kubernetes` directory:
 
 ```bash
-$ kubectl delete -f aeros-ldap-collector.yaml
+$ kubectl delete -f ldap-collector.yaml
 ```
 
 ### Helm Chart
@@ -146,13 +146,13 @@ Should you need to change the configuration directives for the collector, simply
 To install the Helm Chart, run the following command at the `./kubernetes` directory:
 
 ```bash
-$ helm install aeros-ldap-collector ./helm
+$ helm install ldap-collector ./helm
 ```
 
 To uninstall the Helm Chart, run the following command:
 
 ```bash
-$ helm uninstall aeros-ldap-collector
+$ helm uninstall ldap-collector
 ```
 
 ## Running the data product pipeline testbed

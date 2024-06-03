@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "aeros-ldap-collector.fullname" . }}
+  name: {{ include "ldap-collector.fullname" . }}
   labels:
-    {{- include "aeros-ldap-collector.labels" . | nindent 4 }}
+    {{- include "ldap-collector.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -12,4 +12,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "aeros-ldap-collector.selectorLabels" . | nindent 4 }}
+    {{- include "ldap-collector.selectorLabels" . | nindent 4 }}

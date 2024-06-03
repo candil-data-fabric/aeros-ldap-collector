@@ -1,20 +1,20 @@
-# Default values for aeros-ldap-collector.
+# Default values for ldap-collector.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
 
 # File path where the configuration file will be stored:
-CONFIG_FILE_PATH: /aeros-ldap-collector/conf/config.ini
+CONFIG_FILE_PATH: /ldap-collector/conf/config.ini
 
 # Configmap name declaration:
-configmap: aeros-ldap-collector-configmap
+configmap: ldap-collector-configmap
 
 image:
-  repository: localhost:32000/aeros-ldap-collector
+  repository: localhost:32000/ldap-collector
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: "2.0.0"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -97,12 +97,12 @@ autoscaling:
 volumes:
   - name: configmap-volume
     configMap:
-      name: aeros-ldap-collector-configmap
+      name: ldap-collector-configmap
 
 # Additional volumeMounts on the output Deployment definition.
 volumeMounts:
   - name: configmap-volume
-    mountPath: "/aeros-ldap-collector/conf"
+    mountPath: "/ldap-collector/conf"
 
 nodeSelector: {}
 
