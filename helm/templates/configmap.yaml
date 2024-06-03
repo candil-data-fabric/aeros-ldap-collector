@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: aeros-ldap-collector-configmap
+  name: ldap-collector-configmap
 data:
   config.ini: |
-    ; Configuration file for aerOS LDAP Collector.
+    ; Configuration file for the LDAP Collector.
 
     ; Default configuration directives:
     [DEFAULT]
@@ -30,7 +30,7 @@ data:
     user = cn=admin,dc=example,dc=com
 
     ; (MANDATORY) password (String): password of the LDAP user defined above.
-    password = girosadmin
+    password = candil
 
     ; (MANDATORY) max_retries (Integer): defines the maximum number of times the client will try to establish
     ; a connection with the server.

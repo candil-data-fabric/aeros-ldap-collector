@@ -12,7 +12,7 @@ prefixes:
 mappings:
   users:
     sources:
-      - ['http://aeros-ldap-collector:63300/ldap.json~jsonpath', '$.users[*]']
+      - ['http://ldap-collector:63300/ldap.json~jsonpath', '$.users[*]']
     s: aeros:$(attributes.uid)
     po:
       - [a, aeros:User]
@@ -22,14 +22,14 @@ mappings:
   
   roles:
     sources:
-      - ['http://aeros-ldap-collector:63300/ldap.json~jsonpath', '$.roles[*]']
+      - ['http://ldap-collector:63300/ldap.json~jsonpath', '$.roles[*]']
     s: org:$(attributes.cn)
     po:
       - [a, org:Role]
 
   organizations:
     sources:
-      - ['http://aeros-ldap-collector:63300/ldap.json~jsonpath', '$.organizations[*]']
+      - ['http://ldap-collector:63300/ldap.json~jsonpath', '$.organizations[*]']
     s: org:$(attributes.dc)
     po:
       - [a, org:Organization]
@@ -37,7 +37,7 @@ mappings:
   
   membership:
     sources:
-      - ['http://aeros-ldap-collector:63300/ldap.json~jsonpath', '$.memberships[*]']
+      - ['http://ldap-collector:63300/ldap.json~jsonpath', '$.memberships[*]']
     s: org:membership_$(memberUid)_$(role_cn)
     po:
       - [a, org:Membership]

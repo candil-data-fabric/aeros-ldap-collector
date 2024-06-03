@@ -1,6 +1,6 @@
 @startuml
 participant "<b>LDAP Server</b>" as LDAP_Server order 10
-participant "<b>aerOS LDAP Collector</b>" as LDAP_Collector order 20
+participant "<b>LDAP Collector</b>" as LDAP_Collector order 20
 participant "<b>Morph-KGC</b>" as Morph order 30
 
 skinparam sequenceMessageAlign center

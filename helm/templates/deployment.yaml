@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aeros-ldap-collector.fullname" . }}
+  name: {{ include "ldap-collector.fullname" . }}
   labels:
-    {{- include "aeros-ldap-collector.labels" . | nindent 4 }}
+    {{- include "ldap-collector.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "aeros-ldap-collector.selectorLabels" . | nindent 6 }}
+      {{- include "ldap-collector.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,7 +18,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "aeros-ldap-collector.labels" . | nindent 8 }}
+        {{- include "ldap-collector.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -27,7 +27,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "aeros-ldap-collector.serviceAccountName" . }}
+      serviceAccountName: {{ include "ldap-collector.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

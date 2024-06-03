@@ -22,7 +22,7 @@
     void:exampleResource :map_users_000.
 :map_users_000 rml:logicalSource :source_000.
 :source_000 a rml:LogicalSource;
-    rml:source "http://aeros-ldap-collector:63300/ldap.json";
+    rml:source "http://ldap-collector:63300/ldap.json";
     rml:iterator "$.users[*]";
     rml:referenceFormulation ql:JSONPath.
 :map_users_000 a rr:TriplesMap;
@@ -72,7 +72,7 @@
 :rules_000 void:exampleResource :map_roles_000.
 :map_roles_000 rml:logicalSource :source_001.
 :source_001 a rml:LogicalSource;
-    rml:source "http://aeros-ldap-collector:63300/ldap.json";
+    rml:source "http://ldap-collector:63300/ldap.json";
     rml:iterator "$.roles[*]";
     rml:referenceFormulation ql:JSONPath.
 :map_roles_000 a rr:TriplesMap;
@@ -92,7 +92,7 @@
 :rules_000 void:exampleResource :map_organizations_000.
 :map_organizations_000 rml:logicalSource :source_002.
 :source_002 a rml:LogicalSource;
-    rml:source "http://aeros-ldap-collector:63300/ldap.json";
+    rml:source "http://ldap-collector:63300/ldap.json";
     rml:iterator "$.organizations[*]";
     rml:referenceFormulation ql:JSONPath.
 :map_organizations_000 a rr:TriplesMap;
@@ -122,7 +122,7 @@
 :rules_000 void:exampleResource :map_membership_000.
 :map_membership_000 rml:logicalSource :source_003.
 :source_003 a rml:LogicalSource;
-    rml:source "http://aeros-ldap-collector:63300/ldap.json";
+    rml:source "http://ldap-collector:63300/ldap.json";
     rml:iterator "$.memberships[*]";
     rml:referenceFormulation ql:JSONPath.
 :map_membership_000 a rr:TriplesMap;

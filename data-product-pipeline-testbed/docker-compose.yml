@@ -39,7 +39,7 @@ services:
     environment:
       - LDAP_PORT_NUMBER=389
       - LDAP_ADMIN_USERNAME=admin
-      - LDAP_ADMIN_PASSWORD=aeros
+      - LDAP_ADMIN_PASSWORD=candil
       - LDAP_ROOT=dc=example,dc=com
       - LDAP_CUSTOM_LDIF_DIR=/ldifs
     ports:
@@ -58,18 +58,18 @@ services:
     depends_on:
       - openldap
 
-  aeros-ldap-collector:
-    image: aeros-project/ldap-collector:latest
-    hostname: aeros-ldap-collector
-    container_name: aeros-ldap-collector
+  ldap-collector:
+    image: candil-data-fabric/ldap-collector:2.0.0
+    hostname: ldap-collector
+    container_name: ldap-collector
     depends_on:
       - openldap
     ports:
       - "63300:63300"
     environment:
-      - CONFIG_FILE_PATH=/aeros-ldap-collector/conf/config.ini
+      - CONFIG_FILE_PATH=/ldap-collector/conf/config.ini
     volumes:
-      - ./aeros-ldap-collector/conf:/aeros-ldap-collector/conf
+      - ./ldap-collector/conf:/ldap-collector/conf
 
   morph-kgc:
     build:
@@ -77,11 +77,11 @@ services:
       dockerfile: Dockerfile
       args:
         - optional_dependencies=kafka,sqlite,mysql
-    image: aeros-project/morph-kgc:latest
+    image: candil-data-fabric/morph-kgc:latest
     hostname: morph-kgc
     container_name: morph-kgc
     depends_on:
-      aeros-ldap-collector:
+      ldap-collector:
         condition: service_started
       kafka:
         condition: service_healthy
@@ -115,7 +115,7 @@ services:
     build:
       context: ./rdf-to-ngsi-ld/
       dockerfile: Dockerfile
-    image: aeros-project/rdf-to-ngsi-ld:latest
+    image: candil-data-fabric/rdf-to-ngsi-ld:latest
     hostname: rdf-to-ngsi-ld
     container_name: rdf-to-ngsi-ld
     restart: always

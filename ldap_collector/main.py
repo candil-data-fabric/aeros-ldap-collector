@@ -1,4 +1,4 @@
-__name__ = "aerOS LDAP Collector"
+__name__ = "LDAP Collector"
 __version__ = "1.1.3"
 __author__ = "David Martínez García"
 __credits__ = ["GIROS DIT-UPM", "Luis Bellido Triana", "Daniel González Sánchez", "David Martínez García"]
@@ -19,8 +19,8 @@ import os
 ## -- BEGIN CONSTANTS DECLARATION -- ##
 
 # The configuration file path is defined as an environment variable:
-# Default value is: /aeros-ldap-collector/conf/config.ini
-CONFIG_FILE_PATH = os.getenv("CONFIG_FILE_PATH", "/aeros-ldap-collector/conf/config.ini")
+# Default value is: /ldap-collector/conf/config.ini
+CONFIG_FILE_PATH = os.getenv("CONFIG_FILE_PATH", "/ldap-collector/conf/config.ini")
 
 ### CONFIGURATION SECTIONS AND DIRECTIVES ###
 
