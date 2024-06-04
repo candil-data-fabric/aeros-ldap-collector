@@ -1,6 +1,6 @@
 apiVersion: v2
 name: ldap-collector
-description: Helm Chart for the LDAP Collector
+description: LDAP Collector - Helm Chart
 sources:
   - "https://github.com/candil-data-fabric/ldap-collector"
 maintainers:

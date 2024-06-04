@@ -1,11 +1,11 @@
-# Kubernetes descriptor/manifest file for the LDAP Collector.
+# LDAP Collector - Kubernetes descriptor/manifest file.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ldap-collector-configmap
 data:
   config.ini: |
-    ; Configuration file for the LDAP Collector.
+    ; LDAP Collector - Configuration file.
 
     ; Default configuration directives:
     [DEFAULT]

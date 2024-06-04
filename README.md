@@ -68,7 +68,7 @@ The location (file path) where this configuration file is stored must be defined
 An example file is available [here](conf/config.ini), although the structure of the file is the following:
 
 ```ini
-; Configuration file for the LDAP Collector.
+; LDAP Collector - Configuration file.
 
 ; Default configuration directives:
 [DEFAULT]
