@@ -59,7 +59,7 @@ services:
       - openldap
 
   ldap-collector:
-    image: candil-data-fabric/ldap-collector:2.0.0
+    image: ghcr.io/candil-data-fabric/ldap-collector:latest
     hostname: ldap-collector
     container_name: ldap-collector
     depends_on:

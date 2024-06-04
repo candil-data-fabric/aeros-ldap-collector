@@ -11,10 +11,10 @@ CONFIG_FILE_PATH: /ldap-collector/conf/config.ini
 configmap: ldap-collector-configmap
 
 image:
-  repository: localhost:32000/ldap-collector
+  repository: ghcr.io/candil-data-fabric/ldap-collector
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "2.0.0"
+  tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""

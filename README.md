@@ -25,38 +25,22 @@ The generation and retrieval of the JSON object is requested via a REST API meth
 ![](docs/ldap-pipeline.drawio.png)
 
 ## Building the Docker image
-The collector is meant to be run as a Docker container, hence a [`Dockerfile`](Dockerfile) is provided. To build the image, simply run the following command:
+
+The collector is meant to be run as a Docker container, hence a [`Dockerfile`](Dockerfile) is provided.
+
+A pre-built image of the LDAP Collector is available. You can pull it using this command:
 
 ```bash
-$ sudo docker build -t candil-data-fabric/ldap-collector:2.0.0 .
+$ sudo docker pull ghcr.io/candil-data-fabric/ldap-collector:latest
+```
+
+If you prefer to build the image yourself, simply run the following command:
+
+```bash
+$ sudo docker build -t candil-data-fabric/ldap-collector:latest .
 ```
 
 **NOTE:** The collector will serve HTTP GET requests on port 63300 (TCP).
-
-If you want to deploy the collector in a local Kubernetes cluster, you need to build and push the image to Docker's local registry.
-
-**NOTE:** Your Kubernetes cluster must support the use of a local registry.
-
-To enable this registry, create and/or edit the file `/etc/docker/daemon.json` with the following content:
-
-```json
-{
-    "insecure-registries" : ["localhost:32000"]
-}
-```
-
-After that, restart the Docker daemon:
-
-```bash
-$ sudo systemctl restart docker
-```
-
-And build and push the Docker image:
-
-```bash
-$ sudo docker build -t localhost:32000/ldap-collector:2.0.0 .
-$ sudo docker push localhost:32000/ldap-collector:2.0.0
-```
 
 ## Running the collector
 
