@@ -1,7 +1,12 @@
-# Dockerfile for the LDAP Collector.
+# LDAP Collector - Dockerfile.
 
 # The base image is Ubuntu 22.04 LTS ("jammy").
 FROM ubuntu:jammy
+
+# Some labels are defined to store metadata.
+LABEL image_version="2.0.0"
+LABEL app_version="1.1.3"
+LABEL maintainer="David Martínez García"
 
 # Variables to automatically install/update tzdata.
 ARG DEBIAN_FRONTEND=noninteractive
