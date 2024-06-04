@@ -17,8 +17,8 @@ The generation and retrieval of the JSON object is requested via a REST API meth
 ## Current versions:
 - **LDAP Collector application**: 1.1.3 (April 26th, 2024).
 - **Dockerfile**: 2.0.0 (June 3rd, 2024).
-- **Kubernetes manifest file**: 2.0.1 (June 3rd, 2024).
-- **Helm Chart**: 2.0.1 (June 3rd, 2024).
+- **Kubernetes manifest file**: 2.0.2 (June 4th, 2024).
+- **Helm Chart**: 2.0.2 (June 4th, 2024).
 
 ## Data Product Pipeline for LDAP
 
@@ -94,7 +94,7 @@ If you choose to deploy the collector using Docker Compose, you can define the s
 
 ```yaml
 ldap-collector:
-    image: candil-data-fabric/ldap-collector:2.0.0
+    image: ghcr.io/candil-data-fabric/ldap-collector:latest
     hostname: ldap-collector
     container_name: ldap-collector
     ports:
